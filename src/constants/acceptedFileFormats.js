@@ -1,0 +1,1 @@
+module.exports = ['image/jpeg','image/png','video/mp4'];
