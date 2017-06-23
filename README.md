@@ -5,7 +5,7 @@ The following Twitter image bots currently run on Heroku using this code.
 
 [@makomakorin_bot](https://twitter.com/makomakorin_bot)  
 [@harurun_bot_](https://twitter.com/harurun_bot_)  
-[@chihaya_bot_](https://twitter.com/chihaya_bot_)  
+[@chiichan_bot](https://twitter.com/chiichan_bot)  
 [@yayoicchi_bot](https://twitter.com/yayoicchi_bot)  
 [@iorin_bot_](https://twitter.com/iorin_bot_)  
 [@amimami_bot](https://twitter.com/amimami_bot)  
@@ -13,7 +13,7 @@ The following Twitter image bots currently run on Heroku using this code.
 [@ohimechin_bot](https://twitter.com/ohimechin_bot)  
 [@mikimiki_bot_](https://twitter.com/mikimiki_bot_)  
 [@hibikin_bot_](https://twitter.com/hibikin_bot_)  
-[@azusa_bot__](https://twitter.com/azusa_bot__)  
+[@azusasan_bot](https://twitter.com/azusasan_bot/) 
 [@ricchan_bot_](https://twitter.com/ricchan_bot_)  
 
 #### Why the change from Python 3 to Node.js?

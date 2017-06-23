@@ -29,7 +29,7 @@ if (JSON.parse(process.env.BOT_ENABLED)) {
   // Load individual configuration for each bot
   const makomakorin_bot = JSON.parse(process.env.makomakorin_bot);
   const harurun_bot_ = JSON.parse(process.env.harurun_bot_);
-  const chihaya_bot_ = JSON.parse(process.env.chihaya_bot_);
+  const chiichan_bot = JSON.parse(process.env.chiichan_bot);
   const yayoicchi_bot = JSON.parse(process.env.yayoicchi_bot);
   const iorin_bot_ = JSON.parse(process.env.iorin_bot_);
   const amimami_bot = JSON.parse(process.env.amimami_bot);
@@ -37,14 +37,14 @@ if (JSON.parse(process.env.BOT_ENABLED)) {
   const ohimechin_bot = JSON.parse(process.env.ohimechin_bot);
   const mikimiki_bot_ = JSON.parse(process.env.mikimiki_bot_);
   const hibikin_bot_ = JSON.parse(process.env.hibikin_bot_);
-  const azusa_bot__ = JSON.parse(process.env.azusa_bot__);
+  const azusasan_bot = JSON.parse(process.env.azusasan_bot);
   const ricchan_bot_ = JSON.parse(process.env.ricchan_bot_);
 
   // Create bots using configuration
   const bots = [
     new TwitterBot(makomakorin_bot),
     new TwitterBot(harurun_bot_),
-    new TwitterBot(chihaya_bot_),
+    new TwitterBot(chiichan_bot),
     new TwitterBot(yayoicchi_bot),
     new TwitterBot(iorin_bot_),
     new TwitterBot(amimami_bot),
@@ -52,7 +52,7 @@ if (JSON.parse(process.env.BOT_ENABLED)) {
     new TwitterBot(ohimechin_bot),
     new TwitterBot(mikimiki_bot_),
     new TwitterBot(hibikin_bot_),
-    new TwitterBot(azusa_bot__),
+    new TwitterBot(azusasan_bot),
     new TwitterBot(ricchan_bot_)
   ];
   

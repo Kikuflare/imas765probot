@@ -103,9 +103,11 @@ module.exports = class TwitterBot {
           });
         })
         .then((mediaIdString)=>{
-          return this.retryWithDelay(3, 1000, ()=>{
-            return this.updateStatus(mediaIdString, comment);
-          });
+          /* Sometimes a tweet may go through even if the API returns an error.
+           * No post is better than a double or triple post, so we are no longer
+           * retrying if we get an error.
+           */
+          return this.updateStatus(mediaIdString, comment);
         })
         .then(()=>{
           const fileName = path.basename(filepath);
