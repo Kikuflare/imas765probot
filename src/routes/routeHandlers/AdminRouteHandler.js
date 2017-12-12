@@ -1,9 +1,11 @@
 const moment = require('moment');
 const path = require('path');
+const gm = require('gm');
 
 const queueTableNames = require('../../constants/queueTableNames');
 const acceptedSources = require('../../constants/acceptedSources');
 const S3_BUCKET = process.env.S3_BUCKET_NAME;
+const JPG_QUALITY_LEVEL = 80; // set it to something reasonable
 
 
 function AdminRouteHandler(pool, s3) {
@@ -177,38 +179,74 @@ function AdminRouteHandler(pool, s3) {
       });
   };
   
-  // Accepts an upload and optionally queues it
+  // Accepts an upload and optionally queues it and/or converts a .png file to .jpg
   this.acceptUpload = (req, res) => {
     const key = req.body.key;
     const addToQueue = req.body.addToQueue;
+    const convertToJPG = req.body.convertToJPG;
+    const comment = req.body.tweetText ? req.body.tweetText : null;
     const filename = path.basename(key);
     const filenameSplit = filename.split('.')[0].split('-');
     const extension = path.extname(filename);
     const idol = filenameSplit[1];
-    const source = filenameSplit[2];
+    const source = req.body.source;
     let newKey;
     
     if (acceptedSources.indexOf(source) < 0) {
       res.status(400);
       return res.end();
     }
-    
+
     // This query will increment the counter and return the updated value
     const statement = "UPDATE file_counter SET counter = counter + 1 WHERE idol = $1 AND source = $2 RETURNING counter";
     
     return this.pool.query(statement, [idol, source])
       .then(result => {
         const counter = result.rows[0].counter;
-        const newFilename = `${source}_${idol}_${counter}${extension}`;
-        newKey = `${idol}/${source}/${newFilename}`;
         
-        const copyParams = {
-          Bucket: S3_BUCKET,
-          CopySource: `${S3_BUCKET}/${key}`,
-          Key: newKey
-        };
-        
-        return this.s3.copyObject(copyParams).promise()
+        // File is a .png, we will convert to .jpg to reduce file size
+        if (convertToJPG) {
+          const newFilename = `${source}_${idol}_${counter}.jpg`;
+          newKey = `${idol}/${source}/${newFilename}`;
+          
+          // Download the original image to our server and perform conversion
+          const params = {
+            Bucket: S3_BUCKET,
+            Key: key
+          };
+          
+          return s3.getObject(params).promise()
+            .then(data => {
+              gm(data.Body)
+                .quality(JPG_QUALITY_LEVEL)
+                .toBuffer('JPG', (err, buffer) => {
+                  if (err) {
+                    return Promise.reject();
+                  }
+                  else {
+                    const uploadParams = {
+                      Bucket: S3_BUCKET,
+                      Key: newKey,
+                      Body: buffer
+                    };
+
+                    return s3.upload(uploadParams).promise();
+                  }
+                })
+            })
+        }
+        else {
+          const newFilename = `${source}_${idol}_${counter}${extension}`;
+          newKey = `${idol}/${source}/${newFilename}`;
+          
+          const copyParams = {
+            Bucket: S3_BUCKET,
+            CopySource: `${S3_BUCKET}/${key}`,
+            Key: newKey
+          };
+          
+          return this.s3.copyObject(copyParams).promise()
+        }
       })
       .then(() => {
         const deleteParams = {
@@ -223,7 +261,7 @@ function AdminRouteHandler(pool, s3) {
           const table = queueTableNames[idol];
 
           const queueStatement = `INSERT INTO ${table} (filepath, comment, timestamp) VALUES ($1, $2, $3)`;
-          const queueData = [newKey, null, moment().utcOffset(0).format('YYYY-MM-DD HH:mm:ss.SSS')];
+          const queueData = [newKey, comment, moment().utcOffset(0).format('YYYY-MM-DD HH:mm:ss.SSS')];
           
           return this.pool.query(queueStatement, queueData)
             .then(() => res.end());

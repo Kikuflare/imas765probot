@@ -251,8 +251,14 @@ module.exports = class TwitterBot {
               })
               .catch((err)=>{
                 console.log(`${this.screenName}: Failed to send follow request to ${screenName}`);
-                console.log(err);
-                return Promise.resolve();
+                
+                if (err[0].code === 160) {
+                  return this.recordFollower(id, screenName);
+                }
+                else {
+                  console.log(err);
+                  return Promise.resolve();
+                }
               })
           }
           else if (this.blockEnabled) {

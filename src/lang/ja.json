@@ -1,5 +1,6 @@
 {
   "source": {
+    "stst": "ステラステージ",
     "plst": "プラチナスターズ",
     "g4u": "G4U",
     "other": "その他",
@@ -10,7 +11,8 @@
     "shinyfesta": "SHINY FESTA",
     "video": "ビデオ",
     "mobamas": "デレマス",
-    "tachie": "立ち絵"
+    "tachie": "立ち絵",
+	"mirishita": "ミリシタ"
   },
   "idol" : {
     "azusa": "あずさ",
@@ -52,7 +54,8 @@
     "password": "パスワード",
     "showPassword": "パスワードを表示する",
     "createAccount": "アカウントの作成",
-    "registerAccount": "登録"
+    "registerAccount": "登録",
+	"rememberMe": "保存する"
   },
   "navigation": {
     "upload": "アップロード"
@@ -70,7 +73,9 @@
     "browserError": "申し訳ありませんが、現在IEやEdgeブラウザをポートしていません。別のブラウザを使用してください。",
     "loginError": "ユーザー名またはパスワードが間違っています。",
     "usernameError": "ユーザー名はすでに使われています。",
-    "registrationSuccess": "登録できました。"
+    "registrationSuccess": "登録できました。",
+	"suspensionNotice": "現在、全アカウントは凍結されています。凍結の原因は分かりませんが、Twitterサポートに連絡しました。しばらくお待ちください。",
+	"temporaryAccounts": "仮アカウント:"
   },
   "guide": {
     "line1": "添付可能：.jpg, .png, .mp4（10MBまで）",

@@ -8,6 +8,7 @@ import ControlLabel from 'react-bootstrap/lib/ControlLabel';
 import Well from 'react-bootstrap/lib/Well';
 import Alert from 'react-bootstrap/lib/Alert';
 import ProgressBar from 'react-bootstrap/lib/ProgressBar';
+import Checkbox from 'react-bootstrap/lib/Checkbox'
 import platform from 'platform';
 import { RadioGroup, Radio } from 'react-radio-group';
 
@@ -26,7 +27,8 @@ class Uploader extends Component {
       source: null,
       idol: null,
       comment: '',
-      username: '',
+      username: localStorage.getItem('twitterUsername') ? localStorage.getItem('twitterUsername') : '',
+      rememberMe: localStorage.getItem('rememberMe') ? JSON.parse(localStorage.getItem('rememberMe')) : false,
       alertVisible: false,
       uploadFailed: null,
       uploadProgress: 0,
@@ -41,7 +43,6 @@ class Uploader extends Component {
     return (
       <div className="page col-xs-12">
         <h3>{this.props.lang.label.uploader}</h3>
-
         <div style={{marginBottom: '10px'}}>
           <form ref='fileInput'>
             <input
@@ -91,14 +92,41 @@ class Uploader extends Component {
           <FormGroup controlId="twitterUsernameForm">
             <ControlLabel style={{display: 'block', marginBottom: '0px'}}>{this.props.lang.label.twitterUsername} ({this.props.lang.label.optional})</ControlLabel>
             <div className='guide-text'>{this.props.lang.label.twitterUsernameDescription}</div>
-            <FormControl
-              style={{width: '200px', marginBottom: '10px'}}
-              type='email'
-              placeholder={this.props.lang.label.username}
-              maxLength="25"
-              value={this.state.username}
-              onChange={(event)=> this.setState({username: event.target.value})}
-            />
+            <div>
+              <input
+                style={{display: 'inline-block', width: '200px', marginBottom: '10px', marginRight: '10px'}}
+                type="email"
+                placeholder={this.props.lang.label.username}
+                maxLength="25"
+                value={this.state.username}
+                id="twitterUsernameForm"
+                className="form-control"
+                onChange={event => {
+                  this.setState({username: event.target.value});
+                  
+                  if (this.state.rememberMe) {
+                    localStorage.setItem('twitterUsername', event.target.value);
+                  }
+                }}/>
+              <Checkbox
+                inline
+                checked={this.state.rememberMe}
+                onChange={() => {
+                  const newRememberMeState = !this.state.rememberMe;
+                  
+                  if (newRememberMeState) {
+                    localStorage.setItem('twitterUsername', this.state.username);
+                  }
+                  else {
+                    localStorage.removeItem('twitterUsername');
+                  }
+                  
+                  localStorage.setItem('rememberMe', newRememberMeState);
+                  this.setState({rememberMe: newRememberMeState});
+                }}>
+                {this.props.lang.label.rememberMe}
+              </Checkbox>
+            </div>
           </FormGroup>
         </div>
         
@@ -124,7 +152,6 @@ class Uploader extends Component {
           <Button
             style={{marginRight: '10px'}}
             bsStyle='primary'
-            disabled={this.state.isUploading}
             onClick={this.validateInput.bind(this)}>
             <strong>{this.state.isUploading ? this.props.lang.label.uploading : this.props.lang.label.upload}</strong>
           </Button>
@@ -363,7 +390,6 @@ class Uploader extends Component {
     };
     xhr.send(file);
   }
-  
 }
 
 function mapStateToProps(state) {

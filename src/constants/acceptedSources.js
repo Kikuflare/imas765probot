@@ -1,1 +1,1 @@
-module.exports = ['plst', 'g4u', 'other'];
+module.exports = ['stst', 'plst', 'g4u', 'mirishita', 'other'];

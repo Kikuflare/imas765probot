@@ -4,6 +4,10 @@ import Button from 'react-bootstrap/lib/Button';
 import Checkbox from 'react-bootstrap/lib/Checkbox';
 import Table from 'react-bootstrap/lib/Table';
 import Modal from 'react-bootstrap/lib/Modal';
+import Form from 'react-bootstrap/lib/Form';
+import FormGroup from 'react-bootstrap/lib/FormGroup';
+import ControlLabel from 'react-bootstrap/lib/ControlLabel';
+import FormControl from 'react-bootstrap/lib/FormControl';
 
 class Review extends Component {
   constructor(props) {
@@ -14,6 +18,7 @@ class Review extends Component {
       isDataLoading: false,
       showModal: false,
       imageFilename: '',
+      imageSource: '',
       imageURL: '',
       imageWidth: null,
       imageHeight: null,
@@ -21,6 +26,7 @@ class Review extends Component {
       acceptButtonDisabled: false,
       deleteButtonDisabled: false,
       addToQueue: false,
+      convertToJPG: false,
       urlCache: {}
     };
     
@@ -67,13 +73,16 @@ class Review extends Component {
  
         <div className="imageModal">
           <Modal
+            bsSize="large"
             show={this.state.showModal}
             onHide={()=>{
               this.setState({
                 showModal:false,
                 imageFilename: '',
+                imageSource: '',
                 imageURL: '',
                 addToQueue: false,
+                convertToJPG: false,
                 imageWidth: null,
                 imageHeight: null
               })
@@ -87,6 +96,37 @@ class Review extends Component {
             </Modal.Body>
 
             <Modal.Footer>
+              <Form inline className="bottom-margin left-align">
+                <FormGroup controlId="sourceForm">
+                  <ControlLabel className="label-textbox-space">Source</ControlLabel>
+                  <FormControl
+                    type="text"
+                    value={this.state.imageSource}
+                    onChange={event => this.setState({imageSource: event.target.value})}
+                    />
+                </FormGroup>
+              </Form>
+              <div>
+              <Form inline className="bottom-margin left-align">
+                <FormGroup controlId="tweetForm" className="bottom-margin full-width">
+                  <ControlLabel className="label-textbox-space">Tweet</ControlLabel>
+                  <FormControl
+                    componentClass="textarea"
+                    className="full-width"
+                    value={this.state.tweetText}
+                    onChange={event => this.setState({tweetText: event.target.value})}
+                  />
+                </FormGroup>
+                </Form>
+              </div>
+              {this.state.imageFilename.split('.').pop() === 'png' ?
+                <Checkbox
+                  inline
+                  checked={this.state.convertToJPG}
+                  onChange={()=>{this.setState({convertToJPG: !this.state.convertToJPG})}}>Convert to .jpg</Checkbox> :
+                null
+              }
+              
               <Checkbox
                 style={{marginRight: '10px'}}
                 inline
@@ -94,14 +134,17 @@ class Review extends Component {
                 onChange={()=>{this.setState({addToQueue: !this.state.addToQueue})}}>Add to queue?</Checkbox>
               <Button
                 bsStyle='danger'
+                className="bottom-margin"
                 disabled={this.state.deleteButtonDisabled}
                 onClick={this.processImage.bind(this, 'delete')} >Delete</Button>
               <Button
+                className="bottom-margin"
                 disabled={this.state.rejectButtonDisabled}
                 onClick={this.processImage.bind(this, 'reject')} >Reject</Button>
               <Button
                 bsStyle='primary'
-                disabled={this.state.imageFilename.includes('other') || this.state.acceptButtonDisabled}
+                className="bottom-margin"
+                disabled={this.state.acceptButtonDisabled}
                 onClick={this.processImage.bind(this, 'accept')} >Accept</Button>
             </Modal.Footer>
           </Modal>
@@ -158,7 +201,8 @@ class Review extends Component {
       this.setState({
         showModal: true,
         imageFilename: filename,
-        imageURL: this.state.urlCache[filename].url,
+        imageSource: filename.split('.')[0].split('-')[2],
+        imageURL: this.state.urlCache[filename].url
       });
     }
     else {
@@ -183,6 +227,7 @@ class Review extends Component {
             this.setState({
               showModal: true,
               imageFilename: filename,
+              imageSource: filename.split('.')[0].split('-')[2],
               imageURL: result,
               urlCache: newUrlCache
             });
@@ -199,10 +244,12 @@ class Review extends Component {
     
     const authorization = `Bearer ${this.props.token}`;
     
-    const data = {key: `uploads/${this.state.imageFilename}`};
+    const data = {key: `uploads/${this.state.imageFilename}`, source: this.state.imageSource};
     
     if (action === 'accept') {
       data.addToQueue = this.state.addToQueue;
+      data.convertToJPG = this.state.convertToJPG;
+      data.tweetText = this.state.tweetText;
     }
     
     const xhr = new XMLHttpRequest();
@@ -234,7 +281,8 @@ class Review extends Component {
             rejectButtonDisabled: false,
             acceptButtonDisabled: false,
             deleteButtonDisabled: false,
-            addToQueue: false
+            addToQueue: false,
+            convertToJPG: false
           });
         }
       }

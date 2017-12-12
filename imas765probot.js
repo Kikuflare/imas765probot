@@ -39,22 +39,52 @@ if (JSON.parse(process.env.BOT_ENABLED)) {
   const hibikin_bot_ = JSON.parse(process.env.hibikin_bot_);
   const azusasan_bot = JSON.parse(process.env.azusasan_bot);
   const ricchan_bot_ = JSON.parse(process.env.ricchan_bot_);
+  
+  // Backup accounts
+  const makorin_bot2 = JSON.parse(process.env.makorin_bot2);
+  const harurun_bot2 = JSON.parse(process.env.harurun_bot2);
+  const chiichan_bot2 = JSON.parse(process.env.chiichan_bot2);
+  const yayoicchi_bot2 = JSON.parse(process.env.yayoicchi_bot2);
+  const iorin_bot2 = JSON.parse(process.env.iorin_bot2);
+  const amimami_bot4 = JSON.parse(process.env.amimami_bot4);
+  const yukipyon_bot3 = JSON.parse(process.env.yukipyon_bot3);
+  const ohimechin_bot2 = JSON.parse(process.env.ohimechin_bot2);
+  const mikimiki_bot3 = JSON.parse(process.env.mikimiki_bot3);
+  const hibikin_bot3 = JSON.parse(process.env.hibikin_bot3);
+  const ricchan_bot3 = JSON.parse(process.env.ricchan_bot3);
 
   // Create bots using configuration
+  // const bots = [
+    // new TwitterBot(makomakorin_bot),
+    // new TwitterBot(harurun_bot_),
+    // new TwitterBot(chiichan_bot),
+    // new TwitterBot(yayoicchi_bot),
+    // new TwitterBot(iorin_bot_),
+    // new TwitterBot(amimami_bot),
+    // new TwitterBot(yukipyon_bot),
+    // new TwitterBot(ohimechin_bot),
+    // new TwitterBot(mikimiki_bot_),
+    // new TwitterBot(hibikin_bot_),
+    // new TwitterBot(azusasan_bot),
+    // new TwitterBot(ricchan_bot_)
+  // ];
+  
+  
+  // Backup accounts
   const bots = [
-    new TwitterBot(makomakorin_bot),
-    new TwitterBot(harurun_bot_),
-    new TwitterBot(chiichan_bot),
-    new TwitterBot(yayoicchi_bot),
-    new TwitterBot(iorin_bot_),
-    new TwitterBot(amimami_bot),
-    new TwitterBot(yukipyon_bot),
-    new TwitterBot(ohimechin_bot),
-    new TwitterBot(mikimiki_bot_),
-    new TwitterBot(hibikin_bot_),
+    new TwitterBot(makorin_bot2),
+    new TwitterBot(harurun_bot2),
+    new TwitterBot(chiichan_bot2),
+    new TwitterBot(yayoicchi_bot2),
+    new TwitterBot(iorin_bot2),
+    new TwitterBot(amimami_bot4),
+    new TwitterBot(yukipyon_bot3),
+    new TwitterBot(ohimechin_bot2),
+    new TwitterBot(mikimiki_bot3),
+    new TwitterBot(hibikin_bot3),
     new TwitterBot(azusasan_bot),
-    new TwitterBot(ricchan_bot_)
-  ];
+    new TwitterBot(ricchan_bot3)
+  ]
   
   
   // Returns the remaining milliseconds until the next 0 second

@@ -1,5 +1,6 @@
 {
   "source": {
+    "stst": "Stella Stage",
     "plst": "Platinum Stars",
     "g4u": "G4U",
     "other": "Other",
@@ -10,7 +11,8 @@
     "shinyfesta": "SHINY FESTA",
     "video": "Video",
     "mobamas": "Deremas",
-    "tachie": "tachie"
+    "tachie": "tachie",
+	"mirishita": "Million Theater"
   },
   "idol": {
     "azusa": "Azusa",
@@ -52,7 +54,8 @@
     "password": "Password",
     "showPassword": "Show Password",
     "createAccount": "Create Account",
-    "registerAccount": "Register"
+    "registerAccount": "Register",
+	"rememberMe": "Remember me"
   },
   "navigation": {
     "upload": "Upload"
@@ -70,7 +73,9 @@
     "browserError": "Unfortunately, IE and Edge browsers are not supported at this time. Please use another browser.",
     "loginError": "Username or password is incorrect.",
     "usernameError": "Username already exists.",
-    "registrationSuccess": "Registration complete."
+    "registrationSuccess": "Registration complete.",
+	"suspensionNotice": "Currently, all the bots have been suspended. I do not know the reason for the suspensions, but I have contacted Twitter support. Please wait a little bit.",
+	"temporaryAccounts": "Temporary accounts:"
   },
   "guide": {
     "line1": "Accepted file types: .jpg .png .mp4. 10MB file size limit.",

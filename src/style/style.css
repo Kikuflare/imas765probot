@@ -74,3 +74,19 @@ nav.navbar.navbar-default {
 	color: #808080;
 	margin-bottom: 5px;
 }
+
+.bottom-margin {
+	margin-bottom: 9px !important;
+}
+
+.left-align {
+	text-align: left;
+}
+
+.label-textbox-space {
+	margin-right: 7px;
+}
+
+.full-width {
+	width: 100% !important;
+}

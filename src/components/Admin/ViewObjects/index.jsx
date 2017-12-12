@@ -82,6 +82,7 @@ class ViewObjects extends Component {
         
         <div className="imageModal">
           <Modal
+            bsSize="large"
             show={this.state.showModal}
             onHide={()=>{this.setState({showModal:false, imageFilename: '', imageURL: ''})}}>
             <Modal.Header closeButton>
