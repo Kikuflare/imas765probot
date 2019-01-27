@@ -12,7 +12,8 @@
     "video": "ビデオ",
     "mobamas": "デレマス",
     "tachie": "立ち絵",
-	"mirishita": "ミリシタ"
+	"mirishita": "ミリシタ",
+	"birthday": "誕生日"
   },
   "idol" : {
     "azusa": "あずさ",
@@ -35,7 +36,7 @@
     "idol": "アイドル",
     "twitterUsername": "Twitter ユーザー名",
     "twitterUsernameDescription": "非公開、コミュニケーションの為",
-    "username": "@ユーザー名",
+    "username": "ユーザー名",
     "comment": "コメント",
     "maximumCharacters": "500文字以内",
     "optional": "任意",
@@ -55,10 +56,20 @@
     "showPassword": "パスワードを表示する",
     "createAccount": "アカウントの作成",
     "registerAccount": "登録",
-	"rememberMe": "保存する"
+    "rememberMe": "保存する",
+    "date": "日付",
+    "status": "状況",
+    "remarks": "備考",
+    "approver": "承認者",
+    "refresh": "リフレッシュ",
+    "uploadLog": "アップロードログ",
+    "approved": "承認",
+    "rejected": "却下",
+    "unprocessed": "未処理"
   },
   "navigation": {
-    "upload": "アップロード"
+    "upload": "アップロード",
+    "log": "ログ"
   },
   "alert": {
     "titleError": "エラー",
@@ -67,18 +78,20 @@
     "sourceError": "出所を選択してください。",
     "idolError": "アイドルを選択してください。",
     "invalidFileError": "ファイル形式が不正です。",
-    "sizeError": "ファイルのサイズが最大値を越えています。（10MB）",
+    "sizeError": "ファイルのサイズが最大値を越えています。（20MB）",
     "uploadError": "ファイルのアップロードが失敗しました。",
     "uploadSuccess": "ファイルのアップロードが成功しました。",
     "browserError": "申し訳ありませんが、現在IEやEdgeブラウザをポートしていません。別のブラウザを使用してください。",
     "loginError": "ユーザー名またはパスワードが間違っています。",
     "usernameError": "ユーザー名はすでに使われています。",
     "registrationSuccess": "登録できました。",
-	"suspensionNotice": "現在、全アカウントは凍結されています。凍結の原因は分かりませんが、Twitterサポートに連絡しました。しばらくお待ちください。",
-	"temporaryAccounts": "仮アカウント:"
+    "thankYouMessage": "ご提供いただきありがとうございます！",
+	  "suspensionNotice": "現在、全アカウントは凍結されています。凍結の原因は分かりませんが、Twitterサポートに連絡しました。しばらくお待ちください。",
+    "temporaryAccounts": "仮アカウント:",
+    "pleaseCheckLog": "後でアップロードログを確認してください。"
   },
   "guide": {
-    "line1": "添付可能：.jpg, .png, .mp4（10MBまで）",
+    "line1": "添付可能：.jpg, .png, .mp4（20MBまで）",
     "line2": "24時間以内に手動でレビューします",
     "line3": "自分の画像、もしくは権利を取った画像のみ",
     "line4": "低画質や編集した画像はお断りします",

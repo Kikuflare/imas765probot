@@ -12,7 +12,8 @@
     "video": "Video",
     "mobamas": "Deremas",
     "tachie": "tachie",
-	"mirishita": "Million Theater"
+	  "mirishita": "Million Theater",
+	  "birthday": "birthday"
   },
   "idol": {
     "azusa": "Azusa",
@@ -35,7 +36,7 @@
     "idol": "Idol",
     "twitterUsername": "Twitter Username",
     "twitterUsernameDescription": "Will be kept private, only used for communication purposes",
-    "username": "@Username",
+    "username": "Username",
     "comment": "Comment",
     "maximumCharacters": "Maximum 500 characters",
     "optional": "Optional",
@@ -55,10 +56,20 @@
     "showPassword": "Show Password",
     "createAccount": "Create Account",
     "registerAccount": "Register",
-	"rememberMe": "Remember me"
+    "rememberMe": "Remember me",
+    "date": "Date",
+    "status": "Status",
+    "remarks": "Remarks",
+    "approver": "Approver",
+    "refresh": "Refresh",
+    "uploadLog": "Upload Log",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "unprocessed": "Unprocessed"
   },
   "navigation": {
-    "upload": "Upload"
+    "upload": "Upload",
+    "log": "Log"
   },
   "alert": {
     "titleError": "Error",
@@ -67,18 +78,20 @@
     "sourceError": "Please select a source.",
     "idolError": "Please select an idol.",
     "invalidFileError": "Invalid file format.",
-    "sizeError": "File size exceeds maximum value. (10MB)",
+    "sizeError": "File size exceeds maximum value. (20MB)",
     "uploadError": "File upload failed.",
     "uploadSuccess": "File upload successful.",
     "browserError": "Unfortunately, IE and Edge browsers are not supported at this time. Please use another browser.",
     "loginError": "Username or password is incorrect.",
     "usernameError": "Username already exists.",
     "registrationSuccess": "Registration complete.",
-	"suspensionNotice": "Currently, all the bots have been suspended. I do not know the reason for the suspensions, but I have contacted Twitter support. Please wait a little bit.",
-	"temporaryAccounts": "Temporary accounts:"
+    "thankYouMessage": "Thank you for your submission!",
+	  "suspensionNotice": "Currently, all the bots have been suspended. I do not know the reason for the suspensions, but I have contacted Twitter support. Please wait a little bit.",
+    "temporaryAccounts": "Temporary accounts:",
+    "pleaseCheckLog": "Please check the upload log later."
   },
   "guide": {
-    "line1": "Accepted file types: .jpg .png .mp4. 10MB file size limit.",
+    "line1": "Accepted file types: .jpg .png .mp4. 20MB file size limit.",
     "line2": "Images will be manually reviewed within 24 hours of uploading.",
     "line3": "Do not submit another person's pictures without their permission.",
     "line4": "Do not submit low resolution or edited images.",

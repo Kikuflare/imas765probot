@@ -30,27 +30,10 @@ aws.config.update({
 aws.config.setPromisesDependency(Promise);
 const s3 = new aws.S3();
 
-
-// Postgres connection
-const Pool = require('pg-pool');
-const url = require('url');
-const databaseParams = url.parse(process.env.DATABASE_URL);
-const auth = databaseParams.auth.split(':');
-const poolConfig = {
-  user: auth[0],
-  password: auth[1],
-  host: databaseParams.hostname,
-  port: databaseParams.port,
-  database: databaseParams.pathname.split('/')[1],
-  ssl: true,
-  max: 20,
-  idleTimeoutMillis: 3000
-};
-const pool = new Pool(poolConfig);
-
-
 module.exports = class TwitterBot {
-  constructor(botConfig) {
+  constructor(botConfig, pool) {
+    this.pool = pool; // This pool is shared between bots
+
     // Create twitter client using API keys and secrets
     this.client = new Twitter({
       consumer_key: process.env.CONSUMER_KEY,
@@ -80,6 +63,8 @@ module.exports = class TwitterBot {
    
     // App settings
     this.blockThreshold = process.env.BLOCK_THRESHOLD;
+    this.recordTweetEnabled = JSON.parse(process.env.RECORD_TWEET_ENABLED);
+    this.enqueueSmartEnabled = JSON.parse(process.env.ENQUEUE_SMART);
    
    
     /* Post a tweet.
@@ -100,23 +85,24 @@ module.exports = class TwitterBot {
           
           return this.retryWithDelay(3, 1000, ()=>{
             return this.postMedia(filepath);
-          });
+          }, this.tweetRetryHandler);
         })
         .then((mediaIdString)=>{
-          /* Sometimes a tweet may go through even if the API returns an error.
-           * No post is better than a double or triple post, so we are no longer
-           * retrying if we get an error.
-           */
-          return this.updateStatus(mediaIdString, comment);
+          // We will retry in the singular case of a 400 response from Twitter
+          return this.retryWithDelay(3, 1000, () => {
+            return this.updateStatus(mediaIdString, comment);
+          }, this.tweetRetryHandler);
         })
         .then(()=>{
           const fileName = path.basename(filepath);
           console.log(`${this.screenName}: Tweeted file ${fileName}`);
-         
-          return this.recordTweet(filepath, comment);
-        })
-        .then(()=>{
-          return this.deleteRow(this.queueTable, 'filepath', filepath);
+          
+          if (this.recordTweetEnabled) {
+            return this.recordTweet(filepath, comment);
+          }
+          else {
+            return Promise.resolve();
+          }
         })
         .catch((err)=>{
           if (err && err.code === 'NoSuchKey') {
@@ -126,10 +112,16 @@ module.exports = class TwitterBot {
             console.log(`${this.screenName}: Failed to tweet, Twitter is over capacity.`);
           }
           else {
-            console.log(`${this.screenName}: An error occurred while attempting to tweet.`);
+            console.log(`${this.screenName}: An error occurred while attempting to tweet, failed filepath was ${filepath}`);
             console.log(err);
           }
-          return this.deleteRow(this.queueTable, 'filepath', filepath);
+
+          return Promise.resolve();
+        })
+        .finally(() => {
+          return this.retryWithDelay(3, 1000, () => {
+            return this.deleteRow(this.queueTable, 'filepath', filepath);
+          });
         })
     };
 
@@ -318,7 +310,12 @@ module.exports = class TwitterBot {
       return this.countRows(this.queueTable)
         .then((result)=>{
           if (result === 0) {
-            return this.enqueue();
+            if (this.enqueueSmartEnabled) {
+              return this.enqueueSmart();
+            }
+            else {
+              return this.enqueue();
+            }
           }
           else {
             return Promise.resolve();
@@ -332,8 +329,12 @@ module.exports = class TwitterBot {
      * 2. Retrieve list of objects with a specified prefix
      * 3. Generates a shuffled list
      * 4. Sequentially adds rows to the queue table
+     *
+     * This ensures that recently posted files will not be posted again until a
+     * certain amount of time has passed, but requires posting records to be
+     * kept in a tweet_history table.
      */
-    this.enqueue = () => {
+    this.enqueueSmart = () => {
       var recentMedia;
       var filePool;
      
@@ -355,6 +356,36 @@ module.exports = class TwitterBot {
             });
            
           const queue = this.generateQueue(filePool, recentMedia);
+         
+          return this.bulkInsert(queue.slice().reverse());
+        })
+        .catch((err)=>{
+          console.log(`${this.screenName} : An error occurred while attempting to enqueue.`);
+          console.log(err);
+          return Promise.reject(err);
+        })
+    };
+    
+    /* Adds s3 filepaths to the queue table
+     * 1. Retrieve list of objects with a specified prefix
+     * 2. Generates a shuffled list
+     * 3. Sequentially adds rows to the queue table
+     *
+     * Randomly shuffles all files in the pool without regard to recent post
+     * history.
+     */
+    this.enqueue = () => {
+      this.listObjects()
+        .then((result)=>{
+          const filePool = result.Contents
+            .filter((object)=>{
+              return !object.Key.endsWith('/');
+            })
+            .map((object)=>{
+              return object.Key;
+            });
+           
+          const queue = this.shuffleArray(filePool);
          
           return this.bulkInsert(queue.slice().reverse());
         })
@@ -403,6 +434,10 @@ module.exports = class TwitterBot {
         .catch((err)=>{
           if (err && err.code === 'NoSuchKey') {
             console.log(`${this.screenName}: Could not download ${filepath}, the file does not exist in the bucket.`);
+          }
+          else {
+            console.log(`${this.screenName} : An error occurred while attempting to download the latest file.`);
+            console.log(err);
           }
           return this.deleteRow(this.queueTable, 'filepath', filepath)
             .then(()=>{
@@ -717,7 +752,7 @@ module.exports = class TwitterBot {
     this.getLatestRow = (tableName) => {
       const statement = `SELECT * FROM ${tableName} ORDER BY timestamp DESC LIMIT 1`;
      
-      return pool.query(statement);
+      return this.pool.query(statement);
     };
 
 
@@ -725,7 +760,7 @@ module.exports = class TwitterBot {
     this.deleteRow = (tableName, column, value) => {
       const statement = `DELETE FROM ${tableName} WHERE ${column} = $1`;
      
-      return pool.query(statement, [value]);
+      return this.pool.query(statement, [value]);
     };
 
 
@@ -734,7 +769,7 @@ module.exports = class TwitterBot {
       const statement = `INSERT INTO ${this.queueTable} (filepath, comment, timestamp) VALUES ($1, $2, $3)`;
       var pgClient;
 
-      return pool.connect()
+      return this.pool.connect()
         .then(client => {
           pgClient = client;
           return Promise.each(values, (value) => {
@@ -761,7 +796,7 @@ module.exports = class TwitterBot {
     this.recordTweet = (filepath, comment) => {
       const statement = `INSERT INTO ${this.tweetHistoryTable} (filepath, comment, timestamp) VALUES ($1, $2, $3)`;
      
-      return pool.query(statement, [filepath, comment, moment().utcOffset(0).format('YYYY-MM-DD HH:mm:ss.SSS')]);
+      return this.pool.query(statement, [filepath, comment, moment().utcOffset(0).format('YYYY-MM-DD HH:mm:ss.SSS')]);
     };
 
 
@@ -769,7 +804,7 @@ module.exports = class TwitterBot {
     this.getRecentHistory = (tableName) => {
       const statement = `SELECT * FROM ${tableName} ORDER BY timestamp DESC LIMIT ${this.recentLimit}`;
      
-      return pool.query(statement);
+      return this.pool.query(statement);
     };
 
 
@@ -777,7 +812,7 @@ module.exports = class TwitterBot {
     this.countRows = (tableName) => {
       const statement = `SELECT count(*) FROM ${tableName}`;
      
-      return pool.query(statement)
+      return this.pool.query(statement)
         .then((result)=>{
           const count = result.rows[0].count;
           return Promise.resolve(parseInt(count));
@@ -789,7 +824,7 @@ module.exports = class TwitterBot {
     this.getTableContents = (tableName) => {
       const statement = `SELECT id FROM ${tableName} ORDER BY timestamp DESC`;
      
-      return pool.query(statement);
+      return this.pool.query(statement);
     };
 
 
@@ -797,7 +832,7 @@ module.exports = class TwitterBot {
     this.recordFollower = (id, screenName) => {
       const statement = `INSERT INTO ${this.requestSentTable} (id, screen_name, timestamp) VALUES ($1, $2, $3)`;
      
-      return pool.query(statement, [id, screenName, moment().utcOffset(0).format('YYYY-MM-DD HH:mm:ss.SSS')]);
+      return this.pool.query(statement, [id, screenName, moment().utcOffset(0).format('YYYY-MM-DD HH:mm:ss.SSS')]);
     };
 
 
@@ -805,7 +840,7 @@ module.exports = class TwitterBot {
     this.removeFollowRecord = (id) => {
       const statement = `DELETE FROM ${this.requestSentTable} WHERE id = $1`;
      
-      return pool.query(statement, [id]);
+      return this.pool.query(statement, [id]);
     };
 
 
@@ -821,22 +856,46 @@ module.exports = class TwitterBot {
         });
     };
     
-    // Retries on failure, but with a delay between attempts
-    this.retryWithDelay = (remainingRetries, interval, func) => {
+    /* Retries on failure, but with a delay between attempts
+     * predicate is a function that takes error as an argument and returns true if it is safe to retry */
+    this.retryWithDelay = (remainingRetries, interval, func, predicate) => {
       return func()
         .catch((err)=>{
           if (remainingRetries <= 0) {
             return Promise.reject(err);
           }
           else {
-            return Promise.delay(interval)
-              .then(()=>{
-                return this.retryWithDelay(remainingRetries - 1, interval, func);
-              })
+            if (predicate) {
+              if (predicate(err)) {
+                return Promise.delay(interval)
+                  .then(()=>{
+                    return this.retryWithDelay(remainingRetries - 1, interval, func, predicate);
+                  })
+              }
+              else {
+                return Promise.reject(err);
+              }
+            }
+            else {
+              return Promise.delay(interval)
+                .then(()=>{
+                  return this.retryWithDelay(remainingRetries - 1, interval, func, predicate);
+                })
+            }
+            
           }
         })
     };
 
-   
+    this.tweetRetryHandler = err => {
+      if (err && err.message && err.message.includes('400 Bad Request')) {
+        console.log(`${this.screenName}: ${err.message} - Retrying...`);
+
+        return true;
+      }
+      else {
+        return false;
+      }
+    };
   }
 };

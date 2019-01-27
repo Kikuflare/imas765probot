@@ -15,8 +15,9 @@ import Home from './components/Home';
 import Uploader from './components/Upload';
 import About from './components/About';
 import Admin from './components/Admin';
-import Register from './components/Register';
+// import Register from './components/Register';
 import Login from './components/Login';
+import UploadLog from './components/UploadLog';
 
 import './style/style.css';
 
@@ -52,6 +53,7 @@ ReactDOM.render(
         <Route path="/about" component={About} />
         <Route path="/admin" component={Admin} onEnter={requireAuth} />
         <Route path="/login" component={Login} />
+        <Route path="/upload-log" component={UploadLog} />
         {/*<Route path="/register" component={Register} />*/}
       </Route>
     </Router>

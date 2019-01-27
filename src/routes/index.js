@@ -20,6 +20,7 @@ const isAuthenticated = require('../middleware/isAuthenticated');
 
 // Objects containing route handlers
 const uploadRouteHandler = new (require('./routeHandlers/UploadRouteHandler'))(pool, s3);
+const uploadLogRouteHandler = new (require('./routeHandlers/UploadLogRouteHandler'))(pool);
 const adminRouteHandler = new (require('./routeHandlers/AdminRouteHandler'))(pool, s3);
 const authenticationRouteHandler = new (require('./routeHandlers/AuthenticationRouteHandler'))(pool);
 
@@ -29,6 +30,9 @@ module.exports = function (app) {
   // Upload routes
   app.post('/api/post-comment', uploadRouteHandler.postComment);
   app.get('/api/get-signed-url', uploadRouteHandler.getSignedURL);
+
+  // Upload Log routes
+  app.get('/api/get-upload-logs', uploadLogRouteHandler.getUploadLogs);
   
   // Authentication routes
   app.post('/api/login', authenticationRouteHandler.login);

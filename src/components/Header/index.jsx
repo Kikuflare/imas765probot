@@ -5,7 +5,6 @@ import Navbar from 'react-bootstrap/lib/Navbar';
 import Nav from 'react-bootstrap/lib/Nav';
 import NavItem from 'react-bootstrap/lib/NavItem';
 import Link from 'react-router/lib/Link';
-import withRouter from 'react-router/lib/withRouter';
 import LinkContainer from 'react-router-bootstrap/lib/LinkContainer';
 import { selectLanguage } from '../../actions/index';
 
@@ -31,13 +30,16 @@ class Header extends Component {
               <LinkContainer to="/upload">
                 <NavItem eventKey={1}>{this.props.lang.navigation.upload}</NavItem>
               </LinkContainer>
-              <NavItem eventKey={2} href="https://github.com/Kikugumo/imas765probot-v2">GitHub</NavItem>
+              <LinkContainer to="/upload-log">
+                <NavItem eventKey={2}>{this.props.lang.navigation.log}</NavItem>
+              </LinkContainer>
+              <NavItem eventKey={3} href="https://github.com/Kikugumo/imas765probot-v2">GitHub</NavItem>
               <LinkContainer to="/about">
-                <NavItem eventKey={3}>About</NavItem>
+                <NavItem eventKey={4}>About</NavItem>
               </LinkContainer>
               {localStorage.token && localStorage.timeout ? 
                 <LinkContainer to="/admin">
-                  <NavItem eventKey={4}>Admin</NavItem>
+                  <NavItem eventKey={5}>Admin</NavItem>
                 </LinkContainer> :
                 null}
             </Nav>

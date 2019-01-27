@@ -1,4 +1,5 @@
 // imas765probot web server
+require('newrelic'); // new relic monitoring
 
 const path = require('path');
 const express = require('express');

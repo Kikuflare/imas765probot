@@ -33,8 +33,8 @@ function UploadRouteHandler(pool, s3) {
       platform = null;
     }
     
-    const statement = "INSERT INTO uploads(filename, username, platform, comment, timestamp) values($1, $2, $3, $4, $5)";
-    const data = [req.body.filename, username, platform, comment, moment().utcOffset(0).format('YYYY-MM-DD HH:mm:ss.SSS')];
+    const statement = "INSERT INTO uploads(filename, username, platform, comment, timestamp, status, original_filename) values($1, $2, $3, $4, $5, $6, $7)";
+    const data = [req.body.filename, username, platform, comment, moment.utc().format('YYYY-MM-DD HH:mm:ss.SSS'), 'unprocessed', req.body.originalFilename];
     
     return this.pool.query(statement, data)
       .then(() => res.end())
@@ -57,7 +57,13 @@ function UploadRouteHandler(pool, s3) {
     }
     
     else {
-      const fileExt = mime.extension(fileType);
+      let fileExt = mime.extension(fileType);
+      
+      // I decided that I prefer .jpg extension to .jpeg
+      if (fileExt === 'jpeg') {
+        fileExt = 'jpg';
+      }
+      
       const timestamp = moment().utcOffset(0).format('YYYYMMDDHHmmssSSS');
       const outputFilename = `${timestamp}-${idol}-${source}.${fileExt}`
       const key = `uploads/${outputFilename}`;
@@ -83,6 +89,7 @@ function UploadRouteHandler(pool, s3) {
             filename: outputFilename
           };
           
+          res.set('Content-Type', 'application/json');
           res.write(JSON.stringify(returnData));
           res.end();
         }

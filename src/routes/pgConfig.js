@@ -12,8 +12,8 @@ const poolConfig = {
   port: params.port,
   database: params.pathname.split('/')[1],
   ssl: true,
-  max: 20,
-  idleTimeoutMillis: 3000
+  max: 1,
+  idleTimeoutMillis: 60000
 };
 
 module.exports = new Pool(poolConfig);

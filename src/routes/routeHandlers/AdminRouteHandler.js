@@ -1,12 +1,10 @@
 const moment = require('moment');
 const path = require('path');
-const gm = require('gm');
+const sharp = require('sharp');
 
 const queueTableNames = require('../../constants/queueTableNames');
 const acceptedSources = require('../../constants/acceptedSources');
 const S3_BUCKET = process.env.S3_BUCKET_NAME;
-const JPG_QUALITY_LEVEL = 80; // set it to something reasonable
-
 
 function AdminRouteHandler(pool, s3) {
   this.pool = pool;
@@ -18,7 +16,9 @@ function AdminRouteHandler(pool, s3) {
     const table = queueTableNames[idol];
     const source = req.body.source;
     const filename = req.body.filename;
-    const filepath = `${idol}/${source}/${filename}`;
+    // source and idol are reversed in the filepath if the source is 'birthday' THIS IS INTENTIONAL
+    const filepath = source === 'birthday' ? `${source}/${idol}/${filename}` : `${idol}/${source}/${filename}`;
+    
     const comment = req.body.comment ? req.body.comment : null;
     
     const statement = `INSERT INTO ${table} (filepath, comment, timestamp) VALUES ($1, $2, $3)`;
@@ -58,12 +58,13 @@ function AdminRouteHandler(pool, s3) {
           }
         }
         
-        const statement = "SELECT filename, username, comment, timestamp FROM uploads WHERE filename = ANY($1)";
+        const statement = "SELECT filename, username, comment, (timestamp AT TIME ZONE \'UTC\') AS timestamp FROM uploads WHERE filename = ANY($1)";
         
         return this.pool.query(statement, [queryData]);
 
       })
       .then(result => {
+        res.set('Content-Type', 'application/json');
         res.write(JSON.stringify(result.rows));
         return res.end();
       })
@@ -95,6 +96,7 @@ function AdminRouteHandler(pool, s3) {
           }
         }
         
+        res.set('Content-Type', 'application/json');
         res.write(JSON.stringify(result));
         return res.end();
       })
@@ -124,7 +126,8 @@ function AdminRouteHandler(pool, s3) {
         console.log(err);
         return res.end();
       }
-       
+
+      res.set('Content-Type', 'application/json');
       res.write(url);
       res.end();
     });
@@ -134,6 +137,8 @@ function AdminRouteHandler(pool, s3) {
   this.rejectUpload = (req, res) => {
     const key = req.body.key;
     const newKey = key.replace('uploads/', 'processed/');
+    const approver = req.body.approver;
+    const remarks = req.body.remarks;
 
     const copyParams = {
       Bucket: S3_BUCKET,
@@ -148,6 +153,14 @@ function AdminRouteHandler(pool, s3) {
 
     return this.s3.copyObject(copyParams).promise()
       .then(() => this.s3.deleteObject(deleteParams).promise())
+      .then(() => {
+        const query = {
+          text: "UPDATE uploads SET status = 'rejected', approver = $1, remarks = $2 WHERE filename = $3",
+          values: [approver, remarks, key.split('/')[1]]
+        };
+
+        return this.pool.query(query);
+      })
       .then(() => res.end())
       .catch(err => {
         res.status(500);
@@ -188,10 +201,43 @@ function AdminRouteHandler(pool, s3) {
     const filename = path.basename(key);
     const filenameSplit = filename.split('.')[0].split('-');
     const extension = path.extname(filename);
-    const idol = filenameSplit[1];
+    const idol = req.body.idol;
     const source = req.body.source;
+    const approver = req.body.approver;
+    const remarks = req.body.remarks;
+
     let newKey;
-    
+
+    // Video files have a separate flow that requires manual conversion, just update the uploads table and wait for manual processing
+    if (extension === '.mp4') {
+      const copyParams = {
+        Bucket: S3_BUCKET,
+        CopySource: `${S3_BUCKET}/${key}`,
+        Key: key.replace('uploads/', 'processed/')
+      };
+      
+      const deleteParams = {
+        Bucket: S3_BUCKET,
+        Key: key
+      };
+  
+      return this.s3.copyObject(copyParams).promise()
+        .then(() => this.s3.deleteObject(deleteParams).promise())
+        .then(() => {
+          const query = {
+            text: "UPDATE uploads SET status = 'approved', approver = $1, remarks = $2 WHERE filename = $3",
+            values: [approver, remarks, key.split('/')[1]]
+          };
+  
+          return this.pool.query(query);
+        })
+        .then(() => res.end())
+        .catch(err => {
+          res.status(500);
+          return res.end();
+        });
+    }
+
     if (acceptedSources.indexOf(source) < 0) {
       res.status(400);
       return res.end();
@@ -217,22 +263,22 @@ function AdminRouteHandler(pool, s3) {
           
           return s3.getObject(params).promise()
             .then(data => {
-              gm(data.Body)
-                .quality(JPG_QUALITY_LEVEL)
-                .toBuffer('JPG', (err, buffer) => {
-                  if (err) {
-                    return Promise.reject();
-                  }
-                  else {
-                    const uploadParams = {
-                      Bucket: S3_BUCKET,
-                      Key: newKey,
-                      Body: buffer
-                    };
+              return sharp(data.Body)
+                .jpeg()
+                .toBuffer()
+                .then(buffer => {
+                  const uploadParams = {
+                    Bucket: S3_BUCKET,
+                    Key: newKey,
+                    Body: buffer
+                  };
 
-                    return s3.upload(uploadParams).promise();
-                  }
+                  return s3.upload(uploadParams).promise();
                 })
+                .catch(err => {
+                  console.log(err);
+                  return Promise.reject(err);
+                });
             })
         }
         else {
@@ -263,13 +309,21 @@ function AdminRouteHandler(pool, s3) {
           const queueStatement = `INSERT INTO ${table} (filepath, comment, timestamp) VALUES ($1, $2, $3)`;
           const queueData = [newKey, comment, moment().utcOffset(0).format('YYYY-MM-DD HH:mm:ss.SSS')];
           
-          return this.pool.query(queueStatement, queueData)
-            .then(() => res.end());
+          return this.pool.query(queueStatement, queueData);
         }
         else {
-          return res.end();
+          return Promise.resolve();
         }
       })
+      .then(() => {
+        const query = {
+          text: "UPDATE uploads SET status = 'approved', approver = $1, remarks = $2 WHERE filename = $3",
+          values: [approver, remarks, key.split('/')[1]]
+        };
+
+        return this.pool.query(query);
+      })
+      .then(() => res.end())
       .catch(err => {
         console.error(err);
         res.status(500);

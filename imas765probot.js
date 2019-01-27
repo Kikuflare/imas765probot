@@ -25,22 +25,25 @@ if (JSON.parse(process.env.BOT_ENABLED)) {
   const UNFOLLOW_INITIAL_DELAY = parseInt(process.env.UNFOLLOW_INITIAL_DELAY);
   const PRELOAD_INITIAL_DELAY = parseInt(process.env.PRELOAD_INITIAL_DELAY);
   const ENQUEUE_INITIAL_DELAY = parseInt(process.env.ENQUEUE_INITIAL_DELAY);
-  
-  // Load individual configuration for each bot
-  const makomakorin_bot = JSON.parse(process.env.makomakorin_bot);
-  const harurun_bot_ = JSON.parse(process.env.harurun_bot_);
-  const chiichan_bot = JSON.parse(process.env.chiichan_bot);
-  const yayoicchi_bot = JSON.parse(process.env.yayoicchi_bot);
-  const iorin_bot_ = JSON.parse(process.env.iorin_bot_);
-  const amimami_bot = JSON.parse(process.env.amimami_bot);
-  const yukipyon_bot = JSON.parse(process.env.yukipyon_bot);
-  const ohimechin_bot = JSON.parse(process.env.ohimechin_bot);
-  const mikimiki_bot_ = JSON.parse(process.env.mikimiki_bot_);
-  const hibikin_bot_ = JSON.parse(process.env.hibikin_bot_);
-  const azusasan_bot = JSON.parse(process.env.azusasan_bot);
-  const ricchan_bot_ = JSON.parse(process.env.ricchan_bot_);
-  
-  // Backup accounts
+
+  // Instantiate an instance of a connection pool for postgres and share it with all the bots
+  const Pool = require('pg-pool');
+  const url = require('url');
+  const databaseParams = url.parse(process.env.DATABASE_URL);
+  const auth = databaseParams.auth.split(':');
+  const poolConfig = {
+    user: auth[0],
+    password: auth[1],
+    host: databaseParams.hostname,
+    port: databaseParams.port,
+    database: databaseParams.pathname.split('/')[1],
+    ssl: true,
+    max: 4,
+    idleTimeoutMillis: 60000
+  };
+  const pool = new Pool(poolConfig);
+
+  // Get configuration for the bots from the environment variables
   const makorin_bot2 = JSON.parse(process.env.makorin_bot2);
   const harurun_bot2 = JSON.parse(process.env.harurun_bot2);
   const chiichan_bot2 = JSON.parse(process.env.chiichan_bot2);
@@ -51,39 +54,23 @@ if (JSON.parse(process.env.BOT_ENABLED)) {
   const ohimechin_bot2 = JSON.parse(process.env.ohimechin_bot2);
   const mikimiki_bot3 = JSON.parse(process.env.mikimiki_bot3);
   const hibikin_bot3 = JSON.parse(process.env.hibikin_bot3);
+  const azusasan_bot = JSON.parse(process.env.azusasan_bot);
   const ricchan_bot3 = JSON.parse(process.env.ricchan_bot3);
 
-  // Create bots using configuration
-  // const bots = [
-    // new TwitterBot(makomakorin_bot),
-    // new TwitterBot(harurun_bot_),
-    // new TwitterBot(chiichan_bot),
-    // new TwitterBot(yayoicchi_bot),
-    // new TwitterBot(iorin_bot_),
-    // new TwitterBot(amimami_bot),
-    // new TwitterBot(yukipyon_bot),
-    // new TwitterBot(ohimechin_bot),
-    // new TwitterBot(mikimiki_bot_),
-    // new TwitterBot(hibikin_bot_),
-    // new TwitterBot(azusasan_bot),
-    // new TwitterBot(ricchan_bot_)
-  // ];
-  
-  
-  // Backup accounts
+  // Create instances of the bots
   const bots = [
-    new TwitterBot(makorin_bot2),
-    new TwitterBot(harurun_bot2),
-    new TwitterBot(chiichan_bot2),
-    new TwitterBot(yayoicchi_bot2),
-    new TwitterBot(iorin_bot2),
-    new TwitterBot(amimami_bot4),
-    new TwitterBot(yukipyon_bot3),
-    new TwitterBot(ohimechin_bot2),
-    new TwitterBot(mikimiki_bot3),
-    new TwitterBot(hibikin_bot3),
-    new TwitterBot(azusasan_bot),
-    new TwitterBot(ricchan_bot3)
+    new TwitterBot(makorin_bot2, pool),
+    new TwitterBot(harurun_bot2, pool),
+    new TwitterBot(chiichan_bot2, pool),
+    new TwitterBot(yayoicchi_bot2, pool),
+    new TwitterBot(iorin_bot2, pool),
+    new TwitterBot(amimami_bot4, pool),
+    new TwitterBot(yukipyon_bot3, pool),
+    new TwitterBot(ohimechin_bot2, pool),
+    new TwitterBot(mikimiki_bot3, pool),
+    new TwitterBot(hibikin_bot3, pool),
+    new TwitterBot(azusasan_bot, pool),
+    new TwitterBot(ricchan_bot3, pool)
   ]
   
   
@@ -99,7 +86,7 @@ if (JSON.parse(process.env.BOT_ENABLED)) {
    * delay: milliseconds between task loop execution
    */
   const taskLoop = (task, offset, interval, delay) => {
-    return Promise.delay(delay)
+    return Promise.delay(delay + 100) // adding a small additional delay to ensure there is no double post
       .then(()=>{
         const date = new Date();
         const minute = date.getMinutes();
@@ -110,7 +97,13 @@ if (JSON.parse(process.env.BOT_ENABLED)) {
               return taskLoop(task, offset, interval, getLoopDelay());
             })
             .catch((err)=>{
-              return taskLoop(task, offset, interval, getLoopDelay());
+              if (err && err.code === 'NoSuchKey') {
+                // Ignore this
+              }
+              else {
+                return taskLoop(task, offset, interval, getLoopDelay());
+              }
+              
             })
         }
         else {

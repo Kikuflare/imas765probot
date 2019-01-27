@@ -101,7 +101,7 @@ class ViewObjects extends Component {
   
   idolMapper(idol, index) {
     return (
-      <label className='radio-label' key={index}>
+      <label className={`radio-label color-${idol}`} key={index}>
         <Radio className='radio-button' value={idol} />
         {this.props.lang.idol[idol]}
       </label>

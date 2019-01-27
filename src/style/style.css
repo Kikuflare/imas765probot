@@ -90,3 +90,55 @@ nav.navbar.navbar-default {
 .full-width {
 	width: 100% !important;
 }
+
+.default-margin-right {
+  margin-right: 10px;
+}
+
+.color-makoto {
+  color: #4C484F;
+}
+
+.color-haruka {
+  color: #E22B30;
+}
+
+.color-chihaya {
+  color: #2743D2;
+}
+
+.color-yayoi {
+  color: #F39939;
+}
+
+.color-iori {
+  color: #FD99E1;
+}
+
+.color-amimami {
+  color: #FFE43F;
+}
+
+.color-yukiho {
+  color:#D3E5E5;
+}
+
+.color-takane {
+  color: #A6126A;
+}
+
+.color-hibiki {
+  color: #01ADB9;
+}
+
+.color-miki {
+  color: #B4E04B;
+}
+
+.color-azusa {
+  color: #9238BE;
+}
+
+.color-ritsuko {
+  color: #01A860;
+}

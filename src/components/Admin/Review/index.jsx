@@ -8,6 +8,7 @@ import Form from 'react-bootstrap/lib/Form';
 import FormGroup from 'react-bootstrap/lib/FormGroup';
 import ControlLabel from 'react-bootstrap/lib/ControlLabel';
 import FormControl from 'react-bootstrap/lib/FormControl';
+import InputGroup from 'react-bootstrap/lib/InputGroup';
 
 class Review extends Component {
   constructor(props) {
@@ -19,6 +20,7 @@ class Review extends Component {
       showModal: false,
       imageFilename: '',
       imageSource: '',
+      idol: '',
       imageURL: '',
       imageWidth: null,
       imageHeight: null,
@@ -27,7 +29,19 @@ class Review extends Component {
       deleteButtonDisabled: false,
       addToQueue: false,
       convertToJPG: false,
-      urlCache: {}
+      urlCache: {},
+      usePresetRemark: true,
+      preset: 'none',
+      remarks: '',
+      approver: localStorage.getItem('approverName') ? localStorage.getItem('approverName') : ''
+    };
+
+    this.presets = {
+      none: '',
+      lowQuality: '低画質 / Low quality image',
+      inappropriate: '不適切 / Inappropriate image',
+      subtitles: '字幕をOFFにしてください / Please turn the subtitles off',
+      similarImage: '似た画像があります / Similar image exists'
     };
     
     this.displayMedia = this.displayMedia.bind(this);
@@ -40,7 +54,7 @@ class Review extends Component {
           bsStyle='primary'
           style={{marginTop: '10px'}}
           onClick={this.getUploads.bind(this)}>
-          <strong>Refresh</strong>
+          <strong>{this.props.lang.label.refresh}</strong>
         </Button>
         
         <Table>
@@ -59,7 +73,7 @@ class Review extends Component {
                   <td onClick={this.showImage.bind(this, row.filename)}>{row.filename}</td>
                   <td>{row.username}</td>
                   <td>{row.comment}</td>
-                  <td>{row.timestamp}</td>
+                  <td>{new Date(row.timestamp).toString()}</td>
                 </tr>
               );
             })}
@@ -97,7 +111,7 @@ class Review extends Component {
 
             <Modal.Footer>
               <Form inline className="bottom-margin left-align">
-                <FormGroup controlId="sourceForm">
+                <FormGroup controlId="sourceForm" className="default-margin-right">
                   <ControlLabel className="label-textbox-space">Source</ControlLabel>
                   <FormControl
                     type="text"
@@ -105,18 +119,65 @@ class Review extends Component {
                     onChange={event => this.setState({imageSource: event.target.value})}
                     />
                 </FormGroup>
-              </Form>
-              <div>
-              <Form inline className="bottom-margin left-align">
-                <FormGroup controlId="tweetForm" className="bottom-margin full-width">
-                  <ControlLabel className="label-textbox-space">Tweet</ControlLabel>
+                <FormGroup controlId="sourceForm">
+                  <ControlLabel className="label-textbox-space">Idol</ControlLabel>
                   <FormControl
-                    componentClass="textarea"
-                    className="full-width"
-                    value={this.state.tweetText}
-                    onChange={event => this.setState({tweetText: event.target.value})}
-                  />
+                    type="text"
+                    value={this.state.idol}
+                    onChange={event => this.setState({idol: event.target.value})}
+                    />
                 </FormGroup>
+              </Form>
+              <Form inline className="bottom-margin left-align">
+                <FormGroup controlId="approverForm">
+                  <ControlLabel className="label-textbox-space">Approver</ControlLabel>
+                  <InputGroup style={{width: '200px', marginRight: '10px'}}>
+                    <InputGroup.Addon>@</InputGroup.Addon>
+                    <FormControl
+                      type="text"
+                      value={this.state.approver}
+                      onChange={event => {
+                        this.setState({approver: event.target.value})
+                      
+                        localStorage.setItem('approverName', event.target.value);
+                      }}
+                      />
+                  </InputGroup>
+                </FormGroup>
+              </Form>
+              <div style={{display: 'flex'}}>
+                <Checkbox
+                  style={{marginRight: '10px'}}
+                  checked={this.state.usePresetRemark}
+                  onChange={()=>{this.setState({usePresetRemark: !this.state.usePresetRemark})}}>Use Preset Remark?</Checkbox>
+              </div>
+              {this.state.usePresetRemark
+                  ? <FormGroup controlId="formControlsSelect">
+                      <FormControl
+                        componentClass="select"
+                        value={this.state.preset}
+                        onChange={event => this.setState({preset: event.target.value})}>
+                        {this.presetMapper()}
+                      </FormControl>
+                    </FormGroup>
+                  : <FormControl
+                    type="text"
+                    value={this.state.remarks}
+                    onChange={event => this.setState({remarks: event.target.value})} />
+                }
+
+
+              <div>
+                <Form inline className="bottom-margin left-align">
+                  <FormGroup controlId="tweetForm" className="bottom-margin full-width">
+                    <ControlLabel className="label-textbox-space">Tweet</ControlLabel>
+                    <FormControl
+                      componentClass="textarea"
+                      className="full-width"
+                      value={this.state.tweetText}
+                      onChange={event => this.setState({tweetText: event.target.value})}
+                    />
+                  </FormGroup>
                 </Form>
               </div>
               {this.state.imageFilename.split('.').pop() === 'png' ?
@@ -152,6 +213,10 @@ class Review extends Component {
         
       </div>
     );
+  }
+
+  presetMapper() {
+    return Object.keys(this.presets).map(item => <option value={item} key={item}>{this.presets[item]}</option>)
   }
   
   rowMapper(row) {
@@ -202,6 +267,7 @@ class Review extends Component {
         showModal: true,
         imageFilename: filename,
         imageSource: filename.split('.')[0].split('-')[2],
+        idol: filename.split('.')[0].split('-')[1],
         imageURL: this.state.urlCache[filename].url
       });
     }
@@ -228,6 +294,7 @@ class Review extends Component {
               showModal: true,
               imageFilename: filename,
               imageSource: filename.split('.')[0].split('-')[2],
+              idol: filename.split('.')[0].split('-')[1],
               imageURL: result,
               urlCache: newUrlCache
             });
@@ -244,7 +311,13 @@ class Review extends Component {
     
     const authorization = `Bearer ${this.props.token}`;
     
-    const data = {key: `uploads/${this.state.imageFilename}`, source: this.state.imageSource};
+    const data = {
+      key: `uploads/${this.state.imageFilename}`,
+      source: this.state.imageSource,
+      idol: this.state.idol,
+      remarks: this.state.usePresetRemark ? this.presets[this.state.preset] : this.state.remarks,
+      approver: this.state.approver
+    };
     
     if (action === 'accept') {
       data.addToQueue = this.state.addToQueue;
@@ -282,7 +355,10 @@ class Review extends Component {
             acceptButtonDisabled: false,
             deleteButtonDisabled: false,
             addToQueue: false,
-            convertToJPG: false
+            convertToJPG: false,
+            usePresetRemark: true,
+            preset: 'none',
+            remarks: '',
           });
         }
       }
