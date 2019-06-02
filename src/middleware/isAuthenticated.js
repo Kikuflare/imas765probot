@@ -1,6 +1,6 @@
 const apiSecret = process.env.API_SECRET;
 
-module.exports = (role) => {
+module.exports = role => {
   return((req, res, next) => {
     const authorization = req.get('Authorization');
     

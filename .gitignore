@@ -1,7 +1,2 @@
-__pycache__/
-/node_modules
-/twitter_bot/node_modules
-npm-debug.log
-.DS_Store
-/*.env
+node_modules
 /dist/bundle.js

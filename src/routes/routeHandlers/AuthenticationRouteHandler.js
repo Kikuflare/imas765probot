@@ -1,60 +1,46 @@
-const bcrypt = require('bcrypt-nodejs');
 const jwt = require('jsonwebtoken');
 const apiSecret = process.env.API_SECRET;
+const moment = require('moment');
 
+const BASIC_ROLE = 'user';
 
 function AuthenticationRouteHandler(pool) {
   this.pool = pool;
-  
-  // Grants the user a JWT if credentials are valid
+
   this.login = (req, res) => {
-    const username = req.body.username;
-    const password = req.body.password;
-    
-    if (!username || !password) {
-      res.status(400);
-      return res.end();
-    }
-    
-    const usernameLowercase = username.toLowerCase();
-    const statement = "SELECT password, role FROM app_user WHERE username = $1 LIMIT 1";
-    const data = [usernameLowercase];
-    
+    const twitterId = req.user.id;
+    const twitterUsername = req.user.username;
+
+    const statement = "SELECT user_role FROM users WHERE twitter_id = $1 LIMIT 1";
+    const data = [twitterId];
+
     return this.pool.query(statement, data)
       .then(result => {
         const rowCount = result.rowCount;
-      
-        // User with the provided username does not exist
+
         if (rowCount < 1) {
-          res.status(401);
-          return res.end();
+          console.log(`Creating new user with twitter_id: ${twitterId}`);
+
+          const statement = "INSERT INTO users (twitter_id, twitter_username, user_role, date_registered) VALUES ($1, $2, $3, $4)";
+          const data = [twitterId, twitterUsername, BASIC_ROLE, moment().utcOffset(0).format('YYYY-MM-DD HH:mm:ss.SSS')];
+
+          return this.pool.query(statement, data)
+            .then(() => Promise.resolve(BASIC_ROLE));
         }
         else {
-          const role = result.rows[0].role;
-          const passwordHash = result.rows[0].password;
-          const isPasswordValid = bcrypt.compareSync(password, passwordHash);
-          
-          if (isPasswordValid) {
-            const claim = {
-              sub: usernameLowercase,
-              role: role
-            }
-
-            const token = jwt.sign(claim, apiSecret, { expiresIn: '1h' });
-            
-            res.status(200);
-            return res.send(token);
-          }
-          else {
-            res.status(401);
-            return res.end();
-          }
+          const role = result.rows[0].user_role;
+          return Promise.resolve(role);
         }
       })
-      .catch(err => {
-        console.error(err);
-        res.status(500);
-        return res.end();
+      .then(role => {
+        const claim = {
+          sub: twitterUsername,
+          role: role
+        };
+        
+        const token = jwt.sign(claim, apiSecret, { expiresIn: '1h' });
+
+        res.redirect(`/login-redirect?token=${token}`);
       });
   };
   
@@ -75,7 +61,7 @@ function AuthenticationRouteHandler(pool) {
     const username = screenname.toLowerCase();
     
     // Check if the username already exists
-    const existsStatement = "SELECT EXISTS (SELECT 1 FROM app_user WHERE username=$1 LIMIT 1);"
+    const existsStatement = "SELECT EXISTS (SELECT 1 FROM app_user WHERE username=$1 LIMIT 1);";
     
     return this.pool.query(existsStatement, [username])
       .then(result => {
@@ -92,7 +78,7 @@ function AuthenticationRouteHandler(pool) {
           const data = [username, screenname, passwordHash, 'user', timestamp.getCurrentTime()];
           
           return this.pool.query(statement, data)
-            .then(() => res.end())
+            .then(() => res.end());
         }
       })
       .catch(err => {

@@ -9,22 +9,18 @@ if (JSON.parse(process.env.BOT_ENABLED)) {
 
   // Load configuration from environment variables
   const TWEET_OFFSET = parseInt(process.env.TWEET_OFFSET);
-  const FOLLOW_OFFSET = parseInt(process.env.FOLLOW_OFFSET);
-  const UNFOLLOW_OFFSET = parseInt(process.env.UNFOLLOW_OFFSET);
   const PRELOAD_OFFSET = parseInt(process.env.PRELOAD_OFFSET);
   const ENQUEUE_OFFSET = parseInt(process.env.ENQUEUE_OFFSET);
   
   const TWEET_INTERVAL = parseInt(process.env.TWEET_INTERVAL);
-  const FOLLOW_INTERVAL = parseInt(process.env.FOLLOW_INTERVAL);
-  const UNFOLLOW_INTERVAL = parseInt(process.env.UNFOLLOW_INTERVAL);
   const PRELOAD_INTERVAL = parseInt(process.env.PRELOAD_INTERVAL);
   const ENQUEUE_INTERVAL = parseInt(process.env.ENQUEUE_INTERVAL);
 
   const TWEET_INITIAL_DELAY = parseInt(process.env.TWEET_INITIAL_DELAY);
-  const FOLLOW_INITIAL_DELAY = parseInt(process.env.FOLLOW_INITIAL_DELAY);
-  const UNFOLLOW_INITIAL_DELAY = parseInt(process.env.UNFOLLOW_INITIAL_DELAY);
   const PRELOAD_INITIAL_DELAY = parseInt(process.env.PRELOAD_INITIAL_DELAY);
   const ENQUEUE_INITIAL_DELAY = parseInt(process.env.ENQUEUE_INITIAL_DELAY);
+
+  const PRELOAD_ENABLED = JSON.parse(process.env.PRELOAD_ENABLED);
 
   // Instantiate an instance of a connection pool for postgres and share it with all the bots
   const Pool = require('pg-pool');
@@ -39,7 +35,7 @@ if (JSON.parse(process.env.BOT_ENABLED)) {
     database: databaseParams.pathname.split('/')[1],
     ssl: true,
     max: 4,
-    idleTimeoutMillis: 60000
+    idleTimeoutMillis: 10000
   };
   const pool = new Pool(poolConfig);
 
@@ -71,9 +67,8 @@ if (JSON.parse(process.env.BOT_ENABLED)) {
     new TwitterBot(hibikin_bot3, pool),
     new TwitterBot(azusasan_bot, pool),
     new TwitterBot(ricchan_bot3, pool)
-  ]
-  
-  
+  ];
+
   // Returns the remaining milliseconds until the next 0 second
   const getLoopDelay = () => {
     const date = new Date();
@@ -87,32 +82,27 @@ if (JSON.parse(process.env.BOT_ENABLED)) {
    */
   const taskLoop = (task, offset, interval, delay) => {
     return Promise.delay(delay + 100) // adding a small additional delay to ensure there is no double post
-      .then(()=>{
+      .then(() => {
         const date = new Date();
         const minute = date.getMinutes();
         
         if (minute % interval === offset) {
           return task()
-            .then(()=>{
-              return taskLoop(task, offset, interval, getLoopDelay());
-            })
-            .catch((err)=>{
-              if (err && err.code === 'NoSuchKey') {
+            .then(() => taskLoop(task, offset, interval, getLoopDelay()))
+            .catch(err => {
+              if (err && err.response && err.response.status === 409) {
                 // Ignore this
               }
               else {
                 return taskLoop(task, offset, interval, getLoopDelay());
               }
-              
-            })
+            });
         }
         else {
           return taskLoop(task, offset, interval, getLoopDelay());
         }
       })
-      .catch((err)=>{
-        return taskLoop(task, offset, interval, getLoopDelay());
-      })
+      .catch(err => taskLoop(task, offset, interval, getLoopDelay()));
   }
 
 
@@ -120,13 +110,7 @@ if (JSON.parse(process.env.BOT_ENABLED)) {
     if (bot.tweetEnabled) {
       taskLoop(bot.tweet, TWEET_OFFSET, TWEET_INTERVAL, TWEET_INITIAL_DELAY);
     }
-    if (bot.followEnabled) {
-      taskLoop(bot.follow, FOLLOW_OFFSET, FOLLOW_INTERVAL, FOLLOW_INITIAL_DELAY);
-    }
-    if (bot.unfollowEnabled) {
-      taskLoop(bot.unfollow, UNFOLLOW_OFFSET, UNFOLLOW_INTERVAL, UNFOLLOW_INITIAL_DELAY);
-    }
-    if (bot.preloadEnabled) {
+    if (PRELOAD_ENABLED) {
       taskLoop(bot.downloadLatestFile, PRELOAD_OFFSET, PRELOAD_INTERVAL, PRELOAD_INITIAL_DELAY);
     }
 

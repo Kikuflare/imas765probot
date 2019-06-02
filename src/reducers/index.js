@@ -1,10 +1,10 @@
 import { combineReducers } from 'redux';
-import { routerReducer } from 'react-router-redux';
-import lang from './lang'
+import lang from './lang.js'
+import auth from './auth.js'
 
 const rootReducer = combineReducers({
   lang: lang,
-  routing: routerReducer
+  auth: auth
 });
 
 export default rootReducer;

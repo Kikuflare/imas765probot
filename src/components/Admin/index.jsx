@@ -1,40 +1,56 @@
 import React, { Component } from 'react';
-import connect from 'react-redux/lib/components/connect';
-import Tabs from 'react-bootstrap/lib/Tabs';
-import Tab from 'react-bootstrap/lib/Tab';
-import Queue from './Queue';
 import Review from './Review';
+import Enqueue from './Enqueue';
 import ViewObjects from './ViewObjects';
+import ViewQueues from './ViewQueues';
 
 class Admin extends Component {
   constructor(props) {
     super(props);
     
     this.state = {
-      token: localStorage.token
-    }
+      selectedTab: 'review'
+    };
   }
   
   render() {
     return (
-      <div className="page col-xs-12">
+      <div className="page-content">
         <h3>Admin</h3>
-        
-        <Tabs defaultActiveKey={1} id='adminTabs'>
-          <Tab eventKey={1} title='Queue'><Queue token={this.state.token} /></Tab>
-          <Tab eventKey={2} title='Review'><Review token={this.state.token} /></Tab>
-          <Tab eventKey={3} title='View Objects'><ViewObjects token={this.state.token} /></Tab>
-        </Tabs>
+
+        <ul className="tab default-margin-bottom">
+          <li className={"tab-item" + (this.state.selectedTab === 'review' ? ' active' : '')}>
+            <a href="#" onClick={() => this.setState({selectedTab: 'review'})}>Review</a>
+          </li>
+          <li className={"tab-item" + (this.state.selectedTab === 'queue' ? ' active' : '')}>
+            <a href="#" onClick={() => this.setState({selectedTab: 'queue'})}>Queue</a>
+          </li>
+          <li className={"tab-item" + (this.state.selectedTab === 'viewObjects' ? ' active' : '')}>
+            <a href="#" onClick={() => this.setState({selectedTab: 'viewObjects'})}>View Objects</a>
+          </li>
+          <li className={"tab-item" + (this.state.selectedTab === 'viewQueues' ? ' active' : '')}>
+            <a href="#" onClick={() => this.setState({selectedTab: 'viewQueues'})}>View Queues</a>
+          </li>
+        </ul>
+
+        {this.renderTabContent()}
       </div>
     );
   }
-  
-}
 
-function mapStateToProps(state) {
-  return {
-    lang: state.lang
+  renderTabContent() {
+    switch (this.state.selectedTab) {
+      case 'review':
+        return <Review />;
+      case 'queue':
+        return <Enqueue />;
+      case 'viewObjects':
+        return <ViewObjects />;
+      case 'viewQueues':
+        return <ViewQueues />;
+      default:
+        return null;
+    }
   }
 }
-
-export default connect(mapStateToProps)(Admin);
+export default Admin;

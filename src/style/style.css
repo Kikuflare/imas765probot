@@ -1,98 +1,13 @@
-html, body, #app, .wrapper {
-	height: 100%;
-}
-
-#app, .wrapper {
-	overflow: auto;
-}
-
-h4 {
-	margin-bottom: 0px;
-}
-
-div.radio {
-	margin-top: 0px;
-	margin-bottom: 12px;
-}
-
-nav.navbar.navbar-default {
-	margin-bottom: 0px;
-}
-
-.loader {
-    border: 12px solid #f3f3f3; /* Light grey */
-    border-top: 12px solid #3498db; /* Blue */
-    border-radius: 50%;
-    width: 80px;
-    height: 80px;
-    animation: spin 2s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.radio-button {
-	margin-right: 6px !important;
-}
-
-.radio-label {
-	font-weight: normal !important;
-
-	margin-right: 15px;
-}
-
-.flexbox-columns {
-  display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
-}
-
-.textbox-container {
-	max-width: 600px;
-}
-
-.alert-container {
-	max-width: 600px;
-}
-
-.well-container {
-	max-width: 600px;
-}
-
-.preview-container {
-	max-width: 100%;
-}
-
-.component-wrapper {
-	margin-top: 7px
-}
-
-.guide-text {
-	font-size: 11px; 
-	color: #808080;
-	margin-bottom: 5px;
-}
-
-.bottom-margin {
-	margin-bottom: 9px !important;
-}
-
-.left-align {
-	text-align: left;
-}
-
-.label-textbox-space {
-	margin-right: 7px;
-}
-
-.full-width {
-	width: 100% !important;
+.default-margin-bottom {
+  margin-bottom: 0.7em;
 }
 
 .default-margin-right {
-  margin-right: 10px;
+  margin-right: 1em;
+}
+
+.radio-button {
+  margin-right: 0.2em;
 }
 
 .color-makoto {
@@ -141,4 +56,86 @@ nav.navbar.navbar-default {
 
 .color-ritsuko {
   color: #01A860;
+}
+
+.flexbox-columns {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+}
+
+.guide-text {
+	font-size: 11px; 
+	color: #808080;
+	margin-bottom: 5px;
+}
+
+.page-content {
+  padding-bottom: 15px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.flexbox {
+  display: flex;
+}
+
+.flexitem {
+  flex: 1
+}
+
+.width-limiter {
+  max-width: 600px;
+}
+
+.flex-stretch {
+  flex-grow: 1;
+}
+
+.no-wrap {
+  white-space: nowrap;
+}
+
+.break-all {
+  word-break: break-all;
+}
+
+.reset-white-space {
+  white-space: normal !important;
+}
+
+.default-padding {
+  padding: 10px;
+}
+
+.center-text {
+  text-align: center;
+}
+
+.left-text {
+  text-align: left;
+}
+
+.vertical-resize-only {
+  resize: vertical;
+}
+
+.default-padding-top {
+  padding-top: 10px;
+}
+
+.preview-container {
+	max-width: 100%;
+}
+
+.well-padding {
+  padding: 15px;
+}
+
+.upload-guide-text {
+  font-size: 0.85em;
+}
+
+.no-list-style {
+  list-style: none;
 }

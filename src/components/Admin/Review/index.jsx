@@ -1,39 +1,34 @@
 import React, { Component } from 'react';
-import connect from 'react-redux/lib/components/connect';
-import Button from 'react-bootstrap/lib/Button';
-import Checkbox from 'react-bootstrap/lib/Checkbox';
-import Table from 'react-bootstrap/lib/Table';
-import Modal from 'react-bootstrap/lib/Modal';
-import Form from 'react-bootstrap/lib/Form';
-import FormGroup from 'react-bootstrap/lib/FormGroup';
-import ControlLabel from 'react-bootstrap/lib/ControlLabel';
-import FormControl from 'react-bootstrap/lib/FormControl';
-import InputGroup from 'react-bootstrap/lib/InputGroup';
+import { connect } from 'react-redux';
+
+const axios = require('axios');
 
 class Review extends Component {
   constructor(props) {
     super(props);
-    
+
     this.state = {
       data: [],
+      showAll: false,
       isDataLoading: false,
+      urlCache: {},
       showModal: false,
       imageFilename: '',
       imageSource: '',
       idol: '',
-      imageURL: '',
+      imageURL: null,
       imageWidth: null,
       imageHeight: null,
+      approver: localStorage.getItem('approverName') ? localStorage.getItem('approverName') : '',
+      usePresetRemark: true,
+      remarks: '',
+      addToQueue: true,
+      convertToJPG: false,
+      preset: 'none',
+      tweetText: '',
       rejectButtonDisabled: false,
       acceptButtonDisabled: false,
       deleteButtonDisabled: false,
-      addToQueue: false,
-      convertToJPG: false,
-      urlCache: {},
-      usePresetRemark: true,
-      preset: 'none',
-      remarks: '',
-      approver: localStorage.getItem('approverName') ? localStorage.getItem('approverName') : ''
     };
 
     this.presets = {
@@ -41,228 +36,201 @@ class Review extends Component {
       lowQuality: '低画質 / Low quality image',
       inappropriate: '不適切 / Inappropriate image',
       subtitles: '字幕をOFFにしてください / Please turn the subtitles off',
-      similarImage: '似た画像があります / Similar image exists'
+      similarImage: '似た画像があります / Similar image exists',
+      twitterResized: 'Twitterで保存した画像は縮小されますのでオリジナル画像を使ってください / Please use the original image instead of an image downloaded from Twitter',
+      duplicateFile: '重複ファイル / Duplicate file',
+      wrongOrientation: '横向きに撮影してください / Please record in landscape orientation'
     };
-    
-    this.displayMedia = this.displayMedia.bind(this);
+
+    this.renderRemarksForm = this.renderRemarksForm.bind(this);
   }
-  
+
   render() {
     return (
       <div>
-        <Button
-          bsStyle='primary'
-          style={{marginTop: '10px'}}
-          onClick={this.getUploads.bind(this)}>
-          <strong>{this.props.lang.label.refresh}</strong>
-        </Button>
-        
-        <Table>
-          <thead>
-            <tr>
-              <th>Filename</th>
-              <th>Uploader</th>
-              <th>Comment</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {this.state.data.map((row) => {
-              return(
-                <tr key={row.filename}>
-                  <td onClick={this.showImage.bind(this, row.filename)}>{row.filename}</td>
-                  <td>{row.username}</td>
-                  <td>{row.comment}</td>
-                  <td>{new Date(row.timestamp).toString()}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-        
-        {this.state.isDataLoading ?
-          <div style={{textAlign: 'center'}}>  
-            <div className="loader" style={{display: 'inline-block'}} />
-          </div> : null}
- 
-        <div className="imageModal">
-          <Modal
-            bsSize="large"
-            show={this.state.showModal}
-            onHide={()=>{
-              this.setState({
-                showModal:false,
-                imageFilename: '',
-                imageSource: '',
-                imageURL: '',
-                addToQueue: false,
-                convertToJPG: false,
-                imageWidth: null,
-                imageHeight: null
-              })
-            }} >
-            <Modal.Header closeButton>
-              <Modal.Title>{this.state.imageFilename} {this.state.imageWidth && this.state.imageHeight ? `(${this.state.imageWidth} x ${this.state.imageHeight})` : null}</Modal.Title>
-            </Modal.Header>
-
-            <Modal.Body>
-              {this.displayMedia()}
-            </Modal.Body>
-
-            <Modal.Footer>
-              <Form inline className="bottom-margin left-align">
-                <FormGroup controlId="sourceForm" className="default-margin-right">
-                  <ControlLabel className="label-textbox-space">Source</ControlLabel>
-                  <FormControl
-                    type="text"
-                    value={this.state.imageSource}
-                    onChange={event => this.setState({imageSource: event.target.value})}
-                    />
-                </FormGroup>
-                <FormGroup controlId="sourceForm">
-                  <ControlLabel className="label-textbox-space">Idol</ControlLabel>
-                  <FormControl
-                    type="text"
-                    value={this.state.idol}
-                    onChange={event => this.setState({idol: event.target.value})}
-                    />
-                </FormGroup>
-              </Form>
-              <Form inline className="bottom-margin left-align">
-                <FormGroup controlId="approverForm">
-                  <ControlLabel className="label-textbox-space">Approver</ControlLabel>
-                  <InputGroup style={{width: '200px', marginRight: '10px'}}>
-                    <InputGroup.Addon>@</InputGroup.Addon>
-                    <FormControl
-                      type="text"
-                      value={this.state.approver}
-                      onChange={event => {
-                        this.setState({approver: event.target.value})
-                      
-                        localStorage.setItem('approverName', event.target.value);
-                      }}
-                      />
-                  </InputGroup>
-                </FormGroup>
-              </Form>
-              <div style={{display: 'flex'}}>
-                <Checkbox
-                  style={{marginRight: '10px'}}
-                  checked={this.state.usePresetRemark}
-                  onChange={()=>{this.setState({usePresetRemark: !this.state.usePresetRemark})}}>Use Preset Remark?</Checkbox>
-              </div>
-              {this.state.usePresetRemark
-                  ? <FormGroup controlId="formControlsSelect">
-                      <FormControl
-                        componentClass="select"
-                        value={this.state.preset}
-                        onChange={event => this.setState({preset: event.target.value})}>
-                        {this.presetMapper()}
-                      </FormControl>
-                    </FormGroup>
-                  : <FormControl
-                    type="text"
-                    value={this.state.remarks}
-                    onChange={event => this.setState({remarks: event.target.value})} />
-                }
-
-
-              <div>
-                <Form inline className="bottom-margin left-align">
-                  <FormGroup controlId="tweetForm" className="bottom-margin full-width">
-                    <ControlLabel className="label-textbox-space">Tweet</ControlLabel>
-                    <FormControl
-                      componentClass="textarea"
-                      className="full-width"
-                      value={this.state.tweetText}
-                      onChange={event => this.setState({tweetText: event.target.value})}
-                    />
-                  </FormGroup>
-                </Form>
-              </div>
-              {this.state.imageFilename.split('.').pop() === 'png' ?
-                <Checkbox
-                  inline
-                  checked={this.state.convertToJPG}
-                  onChange={()=>{this.setState({convertToJPG: !this.state.convertToJPG})}}>Convert to .jpg</Checkbox> :
-                null
-              }
-              
-              <Checkbox
-                style={{marginRight: '10px'}}
-                inline
-                checked={this.state.addToQueue}
-                onChange={()=>{this.setState({addToQueue: !this.state.addToQueue})}}>Add to queue?</Checkbox>
-              <Button
-                bsStyle='danger'
-                className="bottom-margin"
-                disabled={this.state.deleteButtonDisabled}
-                onClick={this.processImage.bind(this, 'delete')} >Delete</Button>
-              <Button
-                className="bottom-margin"
-                disabled={this.state.rejectButtonDisabled}
-                onClick={this.processImage.bind(this, 'reject')} >Reject</Button>
-              <Button
-                bsStyle='primary'
-                className="bottom-margin"
-                disabled={this.state.acceptButtonDisabled}
-                onClick={this.processImage.bind(this, 'accept')} >Accept</Button>
-            </Modal.Footer>
-          </Modal>
+        <div className="flexbox ">
+          <button className="btn btn-primary default-margin-right" onClick={this.getUploads.bind(this)}><strong>{this.props.lang.label.refresh}</strong></button>
+          <div className="form-group">
+            <label className="form-checkbox">
+              <input
+                type="checkbox"
+                checked={this.state.showAll}
+                onChange={() => this.setState({showAll: !this.state.showAll})}
+                />
+              <i className="form-icon"></i> {this.props.lang.label.showAll}
+            </label>
+          </div>
         </div>
-        
+        <div>
+          <table className="table table-hover table-scroll reset-white-space">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Filename</th>
+                <th>Uploader</th>
+                <th>Comment</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {this.renderRows(this.filterData(this.state.data))}
+            </tbody>
+            
+          </table>
+        </div>
+
+        <div className={"modal" + (this.state.showModal ? " active" : "")} id="modal-id">
+          <a className="modal-overlay" aria-label="Close" onClick={this.onModalHide.bind(this)}></a>
+          <div className="modal-container" style={{maxHeight: '100%', maxWidth: '960px'}}>
+            <div className="modal-header">
+              <a className="btn btn-clear float-right" aria-label="Close" onClick={this.onModalHide.bind(this)}></a>
+              <div className="modal-title h5">{this.state.imageFilename} {this.state.imageWidth && this.state.imageHeight ? `(${this.state.imageWidth} x ${this.state.imageHeight})` : null}</div>
+            </div>
+            <div className="modal-body">
+              <div className="content">
+                {this.displayMedia()}
+              </div>
+              <div className="form-group flexbox">
+                <label className="form-label default-margin-right" htmlFor="image-source"><strong>Source</strong></label>
+                <input className="form-input" type="text" id="image-source" value={this.state.imageSource} onChange={event => this.setState({imageSource: event.target.value})} />
+              </div>
+              <div className="form-group flexbox">
+                <label className="form-label default-margin-right" htmlFor="image-idol"><strong>Idol</strong></label>
+                <input className="form-input" type="text" id="image-idol" value={this.state.idol} onChange={event => this.setState({idol: event.target.value})} />
+              </div>
+
+              <div className="form-group flexbox">
+                {this.state.imageFilename.endsWith('.png')
+                  ? <label className="form-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={this.state.convertToJPG}
+                      onChange={() => this.setState({convertToJPG: !this.state.convertToJPG})}
+                      />
+                    <i className="form-icon"></i><strong>Convert to .jpg</strong>
+                  </label>
+                  : null }
+                
+                <label className="form-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={this.state.addToQueue}
+                    onChange={() => this.setState({addToQueue: !this.state.addToQueue})}
+                    />
+                  <i className="form-icon"></i><strong>Add to queue</strong>
+                </label>
+              </div>
+              <div className="accordion">
+                <input type="checkbox" id="accordion-rewiew" name="accordion-checkbox" hidden />
+                <label className="accordion-header left-text" htmlFor="accordion-rewiew">
+                  <i className="icon icon-arrow-right mr-1" />Advanced Options
+                </label>
+                <div className="accordion-body default-padding-top">
+                  <div className="form-group flexbox">
+                    <label className="form-label default-margin-right" htmlFor="approver-name"><strong>Approver</strong></label>
+                    <div className="input-group flexitem">
+                      <span className="input-group-addon">@</span>
+                      <input
+                        className="form-input"
+                        type="text" id="approver-name"
+                        value={this.state.approver}
+                        onChange={event => {
+                          this.setState({approver: event.target.value});
+
+                          localStorage.setItem('approverName', event.target.value);
+                        }} />
+                    </div>
+                  </div>
+                  <div className="form-group flexbox">
+                    <label className="form-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={this.state.usePresetRemark}
+                        onChange={() => this.setState({usePresetRemark: !this.state.usePresetRemark})}
+                        />
+                      <i className="form-icon"></i><strong>Use preset remark?</strong>
+                    </label>
+                  </div>
+                  {this.renderRemarksForm()}
+
+                  <div className="form-group">
+                    <label className="form-label left-text" htmlFor="tweet-form"><strong>Tweet</strong></label>
+                    <textarea
+                      className="form-input vertical-resize-only"
+                      id="tweet-form"
+                      value={this.state.tweetText}
+                      onChange={event => this.setState({tweetText: event.target.value})}></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <div className="flexbox">
+                <button
+                  className="btn btn-primary default-margin-right"
+                  onClick={() => this.processImage('accept')}>Accept</button>
+                <button
+                  className="btn default-margin-right"
+                  onClick={() => this.processImage('reject')}>Reject</button>
+                <button
+                  className="btn btn-error"
+                  onClick={() => {
+                    if (window.confirm("Are you sure you want to delete this file?")) {
+                      return this.processImage('delete');
+                    }
+                  }}>Delete</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {this.state.isDataLoading ? <div className="loading loading-lg" /> : null }
       </div>
     );
   }
 
-  presetMapper() {
-    return Object.keys(this.presets).map(item => <option value={item} key={item}>{this.presets[item]}</option>)
+  renderRows(data) {
+    if (data.length > 0) {
+      return data.map(row => 
+        <tr key={row.filename + (new Date(row.timestamp).toString())}>
+          <td className="no-wrap">{this.statusFormatter(row.status)}</td>
+          <td className="no-wrap" onClick={this.showImage.bind(this, row.filename)}>{row.filename}</td>
+          <td className="no-wrap">{row.username}</td>
+          <td className="break-all">{row.comment}</td>
+          <td className="no-wrap">{new Date(row.timestamp).toString()}</td>
+        </tr>
+      );
+    }
+    else {
+      return <tr><td colSpan="5" className="center-text">{this.props.lang.label.noResultsFound}</td></tr>;
+    }
   }
-  
-  rowMapper(row) {
-    return(
-      <tr key={row.filename} onClick={this.showImage.bind(this, row.filename)}>
-        <td>{row.filename}</td>
-        <td>{row.username}</td>
-        <td>{row.comment}</td>
-        <td>{row.timestamp}</td>
-      </tr>
-    );
+
+  filterData(data) {
+    return this.state.showAll ? data : data.filter(item => item.status === 'unprocessed' && !item.filename.endsWith('FAILED'));
   }
-  
-  componentDidMount() {
-    this.getUploads();
+
+  statusFormatter(status) {
+    if (status) {
+      switch (status) {
+        case 'approved':
+          return <strong style={{color: 'green'}}>{this.props.lang.label[status]}</strong>
+        case 'rejected':
+          return <strong style={{color: 'red'}}>{this.props.lang.label[status]}</strong>
+        case 'unprocessed':
+          return <strong>{this.props.lang.label[status]}</strong>
+        default:
+          return '';
+      }
+    }
   }
-  
+
   showImage(filename) {
+    this.setState({imageURL: null});
     this.getImageURL(filename);
   }
-  
-  // Checks for new uploads and information from the uploads table
-  getUploads() {
-    this.setState({data: [], isDataLoading: true});
-    
-    const authorization = `Bearer ${this.props.token}`;
-    
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', '/api/get-uploads?prefix=uploads');
-    xhr.setRequestHeader("Authorization", authorization);
-    
-    xhr.onreadystatechange = () => {
-      if (xhr.readyState === 4){
-        if (xhr.status === 200){
-          const resultJSON = xhr.responseText;
-          const result = JSON.parse(resultJSON);
-          this.setState({data: result, isDataLoading: false});
-        }
-      }
-    };
-    
-    xhr.send();
-  }
-  
+
   getImageURL(filename) {
-    if (this.state.urlCache[filename] && Date.now() < this.state.urlCache[filename].expire) {
+    if (this.state.urlCache[filename] && (Date.now() < this.state.urlCache[filename].expire)) {
       this.setState({
         showModal: true,
         imageFilename: filename,
@@ -272,108 +240,76 @@ class Review extends Component {
       });
     }
     else {
-      const authorization = `Bearer ${this.props.token}`;
-      const key = `uploads/${filename}`;
+      const authorization = `Bearer ${this.props.auth}`;
+      const key = `/uploads/${filename}`;
       const encodedKey = encodeURIComponent(key);
-      
-      const xhr = new XMLHttpRequest();
-      xhr.open('GET', `/api/get-image-url?key=${encodedKey}`);
-      xhr.setRequestHeader("Authorization", authorization);
-      
-      xhr.onreadystatechange = () => {
-        if (xhr.readyState === 4){
-          if (xhr.status === 200){
-            const result = xhr.responseText;
-            
-            const newUrlCache = Object.assign({}, this.state.urlCache);
-            const expire = Date.now() + (14 * 60 * 1000);
-            
-            newUrlCache[filename] = {url: result, expire: expire};
-            
-            this.setState({
-              showModal: true,
-              imageFilename: filename,
-              imageSource: filename.split('.')[0].split('-')[2],
-              idol: filename.split('.')[0].split('-')[1],
-              imageURL: result,
-              urlCache: newUrlCache
-            });
-          }
-        }
-      };
-      
-      xhr.send();
-    }
-  }
-  
-  processImage(action) {
-    this.setState({rejectButtonDisabled: true, acceptButtonDisabled: true, deleteButtonDisabled: true});
-    
-    const authorization = `Bearer ${this.props.token}`;
-    
-    const data = {
-      key: `uploads/${this.state.imageFilename}`,
-      source: this.state.imageSource,
-      idol: this.state.idol,
-      remarks: this.state.usePresetRemark ? this.presets[this.state.preset] : this.state.remarks,
-      approver: this.state.approver
-    };
-    
-    if (action === 'accept') {
-      data.addToQueue = this.state.addToQueue;
-      data.convertToJPG = this.state.convertToJPG;
-      data.tweetText = this.state.tweetText;
-    }
-    
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', `/api/${action}-upload`);
-    xhr.setRequestHeader("Authorization", authorization);
-    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    
-    xhr.onreadystatechange = () => {
-      if (xhr.readyState === 4){
-        if (xhr.status === 200){
+
+      axios.get(`/api/get-image-url?key=${encodedKey}`, { headers: { Authorization: authorization } })
+        .then(response => {
+          const url = response.data;
+          const newUrlCache = Object.assign({}, this.state.urlCache);
+          const expire = Date.now() + (4 * 60 * 60 * 1000); // 4 hour expiration
           
-          const oldData = this.state.data;
-          const newData = [];
-          
-          // Remove the rejected image from the view
-          for (var i = 0; i < oldData.length; i++) {
-            if (oldData[i].filename !== this.state.imageFilename) {
-              newData.push(oldData[i]);
-            }
-          }
-          
+          newUrlCache[filename] = {url: url, expire: expire};
+
           this.setState({
-            showModal: false,
-            data: newData,
-            imageFilename: '',
-            imageURL: '',
-            imageWidth: null,
-            imageHeight: null,
-            rejectButtonDisabled: false,
-            acceptButtonDisabled: false,
-            deleteButtonDisabled: false,
-            addToQueue: false,
-            convertToJPG: false,
-            usePresetRemark: true,
-            preset: 'none',
-            remarks: '',
+            showModal: true,
+            imageFilename: filename,
+            imageSource: filename.split('.')[0].split('-')[2],
+            idol: filename.split('.')[0].split('-')[1],
+            imageURL: url,
+            urlCache: newUrlCache
           });
-        }
-      }
-    };
-    
-    xhr.send(JSON.stringify(data));
+        })
+        .catch(err => {
+          this.setState({
+            showModal: true,
+            imageFilename: filename,
+            imageSource: filename.split('.')[0].split('-')[2],
+            idol: filename.split('.')[0].split('-')[1],
+            imageURL: null
+          });
+        });
+    }
   }
-  
+
+  onModalHide() {
+    this.setState({
+      showModal:false,
+      imageFilename: '',
+      imageSource: '',
+      imageURL: '',
+      usePresetRemark: true,
+      addToQueue: true,
+      convertToJPG: false,
+      imageWidth: null,
+      imageHeight: null
+    });
+  }
+
+  getUploads() {
+    this.setState({data: [], isDataLoading: true});
+
+    const authorization = `Bearer ${this.props.auth}`;
+
+    axios.get('/api/get-uploads?prefix=uploads', { headers: { Authorization: authorization } })
+      .then(response => this.setState({data: response.data, isDataLoading: false}))
+      .catch(err => {
+        this.setState({isDataLoading: false});
+        console.log(err);
+      });
+  }
+
   displayMedia() {
-    if (/(jpeg|jpg|png|gif)$/.test(this.state.imageFilename)) {
+    if (this.state.imageURL === null) {
+      return <div>No image found.</div>;
+    }
+    else if (/(jpeg|jpg|png|gif)$/.test(this.state.imageFilename)) {
       return (
         <img
           src={this.state.imageURL}
           style={{maxWidth: '100%', maxHeight: '100%'}}
-          onLoad={(event) => {
+          onLoad={event => {
             this.setState({
               imageWidth: event.target.naturalWidth,
               imageHeight: event.target.naturalHeight
@@ -391,12 +327,90 @@ class Review extends Component {
       );
     }
   }
-}
 
-function mapStateToProps(state) {
-  return {
-    lang: state.lang
+  renderRemarksForm() {
+    if (this.state.usePresetRemark) {
+      return (
+        <div className="form-group">
+          <select className="form-select" value={this.state.preset} onChange={event => this.setState({preset: event.target.value})}>
+            {this.presetMapper()}
+          </select>
+        </div>
+      );
+    }
+    else {
+      return (
+        <input
+          className="form-input"
+          type="text"
+          value={this.state.remarks}
+          onChange={event => this.setState({remarks: event.target.value})} />
+      );
+    }
+  }
+
+  presetMapper() {
+    return Object.keys(this.presets).map(item => <option value={item} key={item}>{this.presets[item]}</option>);
+  }
+
+  processImage(action) {
+    this.setState({rejectButtonDisabled: true, acceptButtonDisabled: true, deleteButtonDisabled: true});
+    
+    const authorization = `Bearer ${this.props.auth}`;
+    
+    const data = {
+      key: `/uploads/${this.state.imageFilename}`
+    };
+
+    if (action === 'accept') {
+      data.addToQueue = this.state.addToQueue;
+      data.convertToJPG = this.state.convertToJPG;
+      data.tweetText = this.state.tweetText;
+      data.source = this.state.imageSource;
+      data.idol = this.state.idol;
+      data.remarks = this.state.usePresetRemark ? this.presets[this.state.preset] : this.state.remarks;
+      data.approver = this.state.approver;
+    }
+    else if (action === 'reject') {
+      data.remarks = this.state.usePresetRemark ? this.presets[this.state.preset] : this.state.remarks;
+      data.approver = this.state.approver;
+    }
+
+    axios.post(`/api/${action}-upload`, data, { headers: { Authorization: authorization } })
+      .then(response => {
+        this.setState({
+          showModal: false,
+          data: this.state.data.filter(item => item.filename !== this.state.imageFilename),
+          imageFilename: '',
+          imageURL: '',
+          imageWidth: null,
+          imageHeight: null,
+          rejectButtonDisabled: false,
+          acceptButtonDisabled: false,
+          deleteButtonDisabled: false,
+          addToQueue: true,
+          convertToJPG: false,
+          usePresetRemark: true,
+          preset: 'none',
+          remarks: ''
+        });
+      })
+      .catch(err => {
+        console.log(err);
+
+        this.setState({
+          rejectButtonDisabled: false,
+          acceptButtonDisabled: false,
+          deleteButtonDisabled: false
+        });
+      });
+  }
+  
+  componentDidMount() {
+    this.getUploads();
   }
 }
+
+const mapStateToProps = state => ({lang: state.lang, auth: state.auth});
 
 export default connect(mapStateToProps)(Review);

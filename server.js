@@ -1,45 +1,56 @@
-// imas765probot web server
-require('newrelic'); // new relic monitoring
-
-const path = require('path');
 const express = require('express');
+const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const app = express();
-const bodyParser = require('body-parser');
-const favicons = require('connect-favicons');
+const path = require('path');
+const favicon = require('serve-favicon')
 const PORT = process.env.PORT || 8080;
 
-if (process.env.NODE_ENV !== 'production') {
-  // Step 1: Create & configure a webpack compiler
-  const webpack = require('webpack');
-  const webpackConfig = require('./webpack.config');
-  const compiler = webpack(webpackConfig);
+// Postgres pool
+const pool = require('./src/db/pgConfig.js');
 
-  // Step 2: Attach the dev middleware to the compiler & the server
-  app.use(require("webpack-dev-middleware")(compiler, {
+if (process.env.NODE_ENV !== 'production') {
+  const webpack = require('webpack');
+  const webpackConfig = require('./webpack.config.js');
+  const compiler = webpack(webpackConfig);
+  const webpackDevMiddleware = require("webpack-dev-middleware");
+  const webpackHotMiddleware = require("webpack-hot-middleware");
+
+  app.use(webpackDevMiddleware(compiler, {
     noInfo: true, publicPath: webpackConfig.output.publicPath
   }));
 
-  // Step 3: Attach the hot middleware to the compiler & the server
-  app.use(require("webpack-hot-middleware")(compiler, {
-    log: console.log, path: '/__webpack_hmr', heartbeat: 10 * 1000
+  app.use(webpackHotMiddleware(compiler, {
+    log: console.log, path: '/__webpack_hmr', heartbeat: 10 * 1000, reload: true
   }));
 }
 
-app.use(express.static(path.join(__dirname, 'dist')));
-app.use(favicons(__dirname + '/src/images/icons'));
-app.use(bodyParser.urlencoded({extended: true}));
-app.use(bodyParser.json());
+app.use(session({
+  store: new pgSession({
+    pool : pool,
+    tableName : 'session'
+  }),
+  secret: process.env.API_SECRET,
+  resave: false,
+  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 }, // 30 days
+  saveUninitialized: false
+}));
 
-require('./src/routes')(app);
+app.use(express.static('dist'));
+app.use(express.json());
+app.use(favicon(path.join(__dirname, 'src/images/', 'favicon.ico')));
 
-app.get('*', function(request, response) {
-  response.sendFile(__dirname + '/dist/index.html')
-});
 
-app.listen(PORT, function(error) {
+// Attach route handlers
+require('./src/routes')(app, pool);
+
+app.get('*', (req, res) => res.sendFile(path.resolve(__dirname, './dist/index.html')));
+
+app.listen(PORT, error => {
   if (error) {
     console.log(error);
-  } else {
+  }
+  else {
     console.log('imas765probot web server started.');
   }
 });

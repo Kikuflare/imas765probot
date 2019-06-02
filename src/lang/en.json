@@ -3,6 +3,8 @@
     "stst": "Stella Stage",
     "plst": "Platinum Stars",
     "g4u": "G4U",
+    "ofa": "One For All",
+    "imas2": "iDOLM@STER 2",
     "other": "Other",
     "million_live": "Million Live",
     "gif": "gif",
@@ -32,6 +34,7 @@
   },
   "label": {
     "uploader": "Uploader",
+    "fileSelect": "File Select",
     "source": "Source",
     "idol": "Idol",
     "twitterUsername": "Twitter Username",
@@ -65,7 +68,9 @@
     "uploadLog": "Upload Log",
     "approved": "Approved",
     "rejected": "Rejected",
-    "unprocessed": "Unprocessed"
+    "unprocessed": "Unprocessed",
+    "showAll": "Show All",
+    "noResultsFound": "No results found."
   },
   "navigation": {
     "upload": "Upload",
@@ -86,7 +91,6 @@
     "usernameError": "Username already exists.",
     "registrationSuccess": "Registration complete.",
     "thankYouMessage": "Thank you for your submission!",
-	  "suspensionNotice": "Currently, all the bots have been suspended. I do not know the reason for the suspensions, but I have contacted Twitter support. Please wait a little bit.",
     "temporaryAccounts": "Temporary accounts:",
     "pleaseCheckLog": "Please check the upload log later."
   },
@@ -97,6 +101,7 @@
     "line4": "Do not submit low resolution or edited images.",
     "line5": "If possible, avoid including subtitles or dialogue boxes in the image.",
     "line6": "With the exception of the Futami twins, group pictures will not be accepted.",
-    "line7": "Low quality images will be rejected (Example: face is obscured, bad screenshot angle)"
+    "line7": "Low quality images will be rejected (Example: face is obscured, bad screenshot angle)",
+    "line8": "Images from Stella Stage or Platinum Stars must be 1920x1080."
   }
 }

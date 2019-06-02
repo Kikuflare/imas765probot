@@ -4,7 +4,7 @@ function UploadRouteHandler(pool) {
   this.pool = pool;
   
   this.getUploadLogs = (req, res) => {
-    const statement = "SELECT filename, status, approver, remarks FROM uploads WHERE filename != 'FAILED' ORDER BY timestamp DESC LIMIT 100"
+    const statement = "SELECT filename, status, approver, remarks FROM uploads WHERE filename NOT LIKE '%FAILED' ORDER BY timestamp DESC LIMIT 100";
 
     return this.pool.query(statement)
       .then(result => {
@@ -23,7 +23,7 @@ function UploadRouteHandler(pool) {
             status: row.status,
             remarks: row.remarks,
             approver: row.approver
-          })
+          });
         }
 
         res.set('Content-Type', 'application/json');
