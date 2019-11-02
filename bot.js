@@ -388,9 +388,50 @@ module.exports = class TwitterBot {
         path: `/${this.folderPrefix}`,
         recursive: true
       };
+
+      const items = [];
       
       return this.dbx.filesListFolder(params)
-        .then(result => Promise.resolve(result.entries));
+        .then(result => {
+          items.push(...result.entries);
+
+          if (result.has_more) {
+            return this.listObjectsContinue(result.cursor)
+              .then(next => {
+                items.push(...next);
+                return Promise.resolve(items);
+              });
+          }
+          else {
+            return Promise.resolve(items);
+          }
+        });
+    };
+
+
+    // Retrieves more objects if Dropbox tells us that there are more remaining
+    this.listObjectsContinue = cursor => {
+      const params = {
+        cursor: cursor
+      };
+
+      const items = [];
+
+      return this.dbx.filesListFolderContinue(params)
+        .then(result => {
+          items.push(...result.entries);
+
+          if (result.has_more) {
+            return this.listObjectsContinue(result.cursor)
+              .then(next => {
+                items.push(...next);
+                return Promise.resolve(items);
+              });
+          }
+          else {
+            return Promise.resolve(items);
+          }
+        });
     };
 
 

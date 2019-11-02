@@ -77,14 +77,20 @@ function AdminRouteHandler(pool, dbx) {
   };
 
   this.getUploads = (req, res) => {
-    const statement = "SELECT filename, status, username, comment, (timestamp AT TIME ZONE \'UTC\') AS timestamp FROM uploads ORDER BY timestamp DESC LIMIT 100";
+    const statement = "SELECT filename, username, comment, status, timestamp FROM uploads ORDER BY timestamp DESC LIMIT 100";
 
     return this.pool.query(statement)
       .then(result => {
         res.set('Content-Type', 'application/json');
-        res.write(JSON.stringify(result.rows));
-        
-        return res.end();
+
+        const uploads = result.rows.map(row => {
+          // Format the timestamp and replace it
+          row.timestamp = moment(row.timestamp, 'YYYYMMDDHHmmssSSS').format('YYYY-MM-DD HH:mm:ss') + "Z";
+
+          return row;
+        });
+
+        return res.send(uploads);
       });
   };
   

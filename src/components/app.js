@@ -52,7 +52,7 @@ class App extends React.Component {
               <li><Link to="/upload-log" className="btn btn-link" onClick={this.closeCanvas.bind(this)}>Upload Log</Link></li>
               {role === 'admin' ? <li><Link to="/admin" className="btn btn-link" onClick={this.closeCanvas.bind(this)}>Admin</Link></li> : null}
               <li><a href="https://twitter.com/Kikugumo/lists/imas765probot" className="btn btn-link">Twitter</a></li>
-              <li><a href="https://github.com/Kikugumo/imas765probot-v2" className="btn btn-link">GitHub</a></li>
+              <li><a href="https://github.com/Kikugumo/imas765probot" className="btn btn-link">GitHub</a></li>
             </ul>
           </div>
   

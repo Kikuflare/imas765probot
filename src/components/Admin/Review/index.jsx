@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 
 const axios = require('axios');
+const parse = require('date-fns/parse');
 
 class Review extends Component {
   constructor(props) {
@@ -29,6 +30,7 @@ class Review extends Component {
       rejectButtonDisabled: false,
       acceptButtonDisabled: false,
       deleteButtonDisabled: false,
+      isProcessing: false
     };
 
     this.presets = {
@@ -65,10 +67,11 @@ class Review extends Component {
           <table className="table table-hover table-scroll reset-white-space">
             <thead>
               <tr>
-                <th>Status</th>
-                <th>Filename</th>
+                <th>Idol</th>
+                <th>Source</th>
                 <th>Uploader</th>
                 <th>Comment</th>
+                <th>Status</th>
                 <th>Date</th>
               </tr>
             </thead>
@@ -121,8 +124,8 @@ class Review extends Component {
                 </label>
               </div>
               <div className="accordion">
-                <input type="checkbox" id="accordion-rewiew" name="accordion-checkbox" hidden />
-                <label className="accordion-header left-text" htmlFor="accordion-rewiew">
+                <input type="checkbox" id="accordion-review" name="accordion-checkbox" hidden />
+                <label className="accordion-header left-text" htmlFor="accordion-review">
                   <i className="icon icon-arrow-right mr-1" />Advanced Options
                 </label>
                 <div className="accordion-body default-padding-top">
@@ -167,13 +170,19 @@ class Review extends Component {
             <div className="modal-footer">
               <div className="flexbox">
                 <button
-                  className="btn btn-primary default-margin-right"
-                  onClick={() => this.processImage('accept')}>Accept</button>
+                  className={"btn btn-primary default-margin-right" + (this.state.isProcessing ? ' loading' : '')}
+                  disabled={this.state.isProcessing}
+                  onClick={() => {
+                    this.setState({isProcessing: true});
+                    this.processImage('accept');
+                  }}>Accept</button>
                 <button
                   className="btn default-margin-right"
+                  disabled={this.state.isProcessing}
                   onClick={() => this.processImage('reject')}>Reject</button>
                 <button
                   className="btn btn-error"
+                  disabled={this.state.isProcessing}
                   onClick={() => {
                     if (window.confirm("Are you sure you want to delete this file?")) {
                       return this.processImage('delete');
@@ -190,15 +199,22 @@ class Review extends Component {
 
   renderRows(data) {
     if (data.length > 0) {
-      return data.map(row => 
-        <tr key={row.filename + (new Date(row.timestamp).toString())}>
-          <td className="no-wrap">{this.statusFormatter(row.status)}</td>
-          <td className="no-wrap" onClick={this.showImage.bind(this, row.filename)}>{row.filename}</td>
-          <td className="no-wrap">{row.username}</td>
-          <td className="break-all">{row.comment}</td>
-          <td className="no-wrap">{new Date(row.timestamp).toString()}</td>
-        </tr>
-      );
+      return data.map(row => {
+        const filenameSplit = row.filename.split('-');
+        const idol = filenameSplit[1];
+        const source = filenameSplit[2].split('.')[0];
+
+        return (
+          <tr key={row.filename + (new Date(row.timestamp).toString())}>
+            <td className="no-wrap" onClick={this.showImage.bind(this, row.filename)}>{this.idolFormatter(idol)}</td>
+            <td className="no-wrap" onClick={this.showImage.bind(this, row.filename)}>{source}</td>
+            <td className="no-wrap">{row.username}</td>
+            <td className="break-all">{row.comment}</td>
+            <td className="no-wrap">{this.statusFormatter(row.status)}</td>
+            <td className="no-wrap">{row.timestamp ? parse(row.timestamp).toString() : ''}</td>
+          </tr>
+        );
+      });
     }
     else {
       return <tr><td colSpan="5" className="center-text">{this.props.lang.label.noResultsFound}</td></tr>;
@@ -207,6 +223,10 @@ class Review extends Component {
 
   filterData(data) {
     return this.state.showAll ? data : data.filter(item => item.status === 'unprocessed' && !item.filename.endsWith('FAILED'));
+  }
+
+  idolFormatter(idol) {
+    return idol ? <strong className={`color-${idol}`}>{this.props.lang.idol[idol]}</strong> : null;
   }
 
   statusFormatter(status) {
@@ -388,6 +408,7 @@ class Review extends Component {
           rejectButtonDisabled: false,
           acceptButtonDisabled: false,
           deleteButtonDisabled: false,
+          isProcessing: false,
           addToQueue: true,
           convertToJPG: false,
           usePresetRemark: true,
@@ -401,7 +422,8 @@ class Review extends Component {
         this.setState({
           rejectButtonDisabled: false,
           acceptButtonDisabled: false,
-          deleteButtonDisabled: false
+          deleteButtonDisabled: false,
+          isProcessing: false
         });
       });
   }
