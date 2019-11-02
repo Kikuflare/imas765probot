@@ -5,7 +5,7 @@ const Twitter = require('twitter');
 const path = require('path');
 const Promise = require('bluebird');
 const mime = require('mime-types');
-const fs = Promise.promisifyAll(require("fs"));
+const fs = require("fs");
 const moment = require('moment');
 
 // Bluebird setting
@@ -257,7 +257,7 @@ module.exports = class TwitterBot {
     this.initUpload = filepath => {
       const mimeType = mime.lookup(filepath);
 
-      return fs.statAsync(path.join(__dirname, filepath))
+      return fs.promises.stat(path.join(__dirname, filepath))
         .then(stat => this.client.post('media/upload', {
           command : 'INIT',
           total_bytes : stat.size,
@@ -272,7 +272,7 @@ module.exports = class TwitterBot {
 
     // Posts chunks of the file in sequential order
     this.appendUpload = (filepath, mediaIdString) => {
-      return fs.statAsync(path.join(__dirname, filepath))
+      return fs.promises.stat(path.join(__dirname, filepath))
         .then(stat => {
           return new Promise((resolve, reject) => {
             const finalChunkIndex = Math.floor(stat.size / CHUNK_SIZE);
@@ -359,15 +359,19 @@ module.exports = class TwitterBot {
     // Write data received from Dropbox into a file
     this.writeFile = (filepath, data) => {
       const savePath = path.join(__dirname, filepath);
-      const file = fs.createWriteStream(savePath);
-      
-      return file.writeAsync(data.fileBinary);
+      const writeStream = fs.createWriteStream(savePath);
+
+      writeStream.on('finish', () => {
+        return Promise.resolve();
+      });
+
+      writeStream.write(data.fileBinary);
     };
 
 
     // Passes true if file exists, false if not
     this.checkFileExists = filepath => {
-      return fs.statAsync(path.join(__dirname, filepath))
+      return fs.promises.stat(path.join(__dirname, filepath))
         .then(() => Promise.resolve(true))
         .catch(err => {
           if (err.code == 'ENOENT') {
