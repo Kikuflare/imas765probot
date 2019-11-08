@@ -66,7 +66,7 @@ module.exports = class TwitterBot {
           filepath = result.filepath;
           comment = result.comment;
           
-          return this.retryWithDelay(3, 1000, () => this.postMedia(filepath), this.tweetRetryHandler);
+          return this.retryWithDelay(10, 1000, () => this.postMedia(filepath), this.tweetRetryHandler);
         })
         .then(mediaIdString => {
           // Check tweetRetryHandler() for the cases in which we will retry
@@ -249,7 +249,7 @@ module.exports = class TwitterBot {
 
           return this.retryWithDelay(5, 1000, () => this.appendUpload(filepath, mediaIdString));
         })
-        .then(() => this.retryWithDelay(10, 1000, () => this.finalizeUpload(mediaIdString), this.tweetRetryHandler));
+        .then(() => this.retryWithDelay(3, 1000, () => this.finalizeUpload(mediaIdString)));
     };
     
 
@@ -257,12 +257,18 @@ module.exports = class TwitterBot {
     this.initUpload = filepath => {
       const mimeType = mime.lookup(filepath);
 
-      return fs.promises.stat(path.join(__dirname, filepath))
-        .then(stat => this.client.post('media/upload', {
-          command : 'INIT',
-          total_bytes : stat.size,
-          media_type : mimeType,
-        }))
+      const stat = fs.statSync(path.join(__dirname, filepath));
+
+      if (stat.size === 0) {
+        console.log(`${this.screenName} : File size is 0!`);
+        // TODO: handle this case
+      }
+
+      return this.client.post('media/upload', {
+        command : 'INIT',
+        total_bytes : stat.size,
+        media_type : mimeType,
+      })
         .catch(err => {
           console.log(`${this.screenName} : INIT failed`);
           return Promise.reject(err);
@@ -272,43 +278,71 @@ module.exports = class TwitterBot {
 
     // Posts chunks of the file in sequential order
     this.appendUpload = (filepath, mediaIdString) => {
-      return fs.promises.stat(path.join(__dirname, filepath))
-        .then(stat => {
-          return new Promise((resolve, reject) => {
-            const finalChunkIndex = Math.floor(stat.size / CHUNK_SIZE);
-            const readStream = fs.createReadStream(path.join(__dirname, filepath), { highWaterMark: CHUNK_SIZE });
+      const readPath = path.join(__dirname, filepath);
 
-            var currentChunkIndex = 0;
+      const stat = fs.statSync(readPath);
 
-            readStream.on('data', chunk => {
-              readStream.pause();
+      if (stat.size === 0) {
+        console.log(`${this.screenName} : File size is 0!`);
+        // TODO: handle this case
+      }
 
-              const payload = {
-                command: 'APPEND',
-                media_id: mediaIdString,
-                media: chunk,
-                segment_index: currentChunkIndex
-              };
+      return new Promise((resolve, reject) => {
+        let isUploading = false;
+        let isFinishedReading = false;
+        let isError = false;
 
-              this.client.post('media/upload', payload)
-                .then(() => {
-                  if (currentChunkIndex === finalChunkIndex) {
-                    resolve();
-                  }
-                  currentChunkIndex++;
-                  readStream.resume();
-                })
-                .catch(err => {
-                  console.log(`${this.screenName} : An error occurred while attempting to upload the file.`);
-                  reject(err);
-                });
+        const readStream = fs.createReadStream(readPath, { highWaterMark: CHUNK_SIZE });
+
+        var currentChunkIndex = 0;
+
+        readStream.on('data', chunk => {
+          readStream.pause();
+
+          if (isError) {
+            return reject();
+          }
+          
+          isUploading = true;
+
+          const payload = {
+            command: 'APPEND',
+            media_id: mediaIdString,
+            media: chunk,
+            segment_index: currentChunkIndex
+          };
+
+          this.client.post('media/upload', payload)
+            .then(() => {
+              isUploading = false;
+
+              if (isFinishedReading) {
+                return resolve();
+              }
+              else {
+                currentChunkIndex++;
+                readStream.resume();
+                return;
+              }
+            })
+            .catch(err => {
+              isError = true;
+              console.log(`${this.screenName} : APPEND failed`);
+              return reject(err);
             });
-          });
-        })
-        .catch(err => {
-          console.log(`${this.screenName} : APPEND failed on chunk`);
-          return Promise.reject(err);
         });
+
+        readStream.on('end', () => {
+          isFinishedReading = true;
+
+          if (!isUploading && !isError) {
+            return resolve();
+          }
+          else {
+            return;
+          }
+        })
+      });
     };
 
 
@@ -318,7 +352,11 @@ module.exports = class TwitterBot {
         command: 'FINALIZE',
         media_id: mediaIdString
       })
-        .then(() => Promise.resolve(mediaIdString));
+        .then(() => Promise.resolve(mediaIdString))
+        .catch(err => {
+          console.log(`${this.screenName} : FINALIZE failed`);
+          return Promise.reject(err);
+        });
     };
 
 
@@ -358,31 +396,31 @@ module.exports = class TwitterBot {
 
     // Write data received from Dropbox into a file
     this.writeFile = (filepath, data) => {
-      const savePath = path.join(__dirname, filepath);
-      const writeStream = fs.createWriteStream(savePath);
+      return new Promise((resolve, reject) => {
+        const savePath = path.join(__dirname, filepath);
+        const writeStream = fs.createWriteStream(savePath);
 
-      writeStream.on('finish', () => {
-        return Promise.resolve();
+        writeStream.on('open', () => {
+          writeStream.write(data.fileBinary);
+          writeStream.end();
+        });
+
+        writeStream.on('finish', () => {
+          return resolve();
+        });
+
+        writeStream.on('error', err => {
+          console.log(`${this.screenName} : An error occurred while attempting to write to file. savePath: ${savePath}`);
+          console.log(err);
+          return reject(err);
+        });
       });
-
-      writeStream.write(data.fileBinary);
     };
 
 
     // Passes true if file exists, false if not
     this.checkFileExists = filepath => {
-      return fs.promises.stat(path.join(__dirname, filepath))
-        .then(() => Promise.resolve(true))
-        .catch(err => {
-          if (err.code == 'ENOENT') {
-            return Promise.resolve(false);
-          }
-          else {
-            console.log(`${this.screenName} : An error occurred while attempting to check if file exists.`);
-            console.log(err);
-            return Promise.reject(err);
-          }
-        });
+      return fs.existsSync(path.join(__dirname, filepath));
     };
 
 

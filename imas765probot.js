@@ -105,7 +105,7 @@ if (JSON.parse(process.env.BOT_ENABLED)) {
       .catch(err => taskLoop(task, offset, interval, getLoopDelay()));
   }
 
-
+  // Start execution loop for various tasks
   for (const bot of bots) {
     if (bot.tweetEnabled) {
       taskLoop(bot.tweet, TWEET_OFFSET, TWEET_INTERVAL, TWEET_INITIAL_DELAY);
