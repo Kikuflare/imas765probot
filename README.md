@@ -1,5 +1,5 @@
 # imas765probot
-Version 3.0 of [imas765probot](https://github.com/Kikugumo/imas765probot) on Node.js
+Version 3.2 of [imas765probot](https://github.com/Kikugumo/imas765probot) on Node.js
 
 The following Twitter image bots currently run on Heroku using this code.
 
