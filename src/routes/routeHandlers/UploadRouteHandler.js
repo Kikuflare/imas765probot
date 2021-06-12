@@ -70,7 +70,7 @@ function UploadRouteHandler(pool, dbx) {
       dbx.filesGetTemporaryUploadLink(params)
         .then(response => {
           const returnData = {
-            signedRequest: response.link,
+            signedRequest: response.result.link,
             filename: outputFilename
           };
 

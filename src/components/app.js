@@ -7,6 +7,7 @@ import LoginRedirect from './LoginRedirect';
 import Admin from './Admin';
 import UploadLog from './UploadLog';
 import { selectLanguage } from '../actions/lang';
+import jwt_decode from "jwt-decode";
 
 import { BrowserRouter as Router, Route, Link, Redirect } from 'react-router-dom';
 
@@ -18,12 +19,11 @@ class App extends React.Component {
       offCanvasOpen: false
     };
 
-    this.jwtDecode = require('jwt-decode');
     this.setLanguage = this.setLanguage.bind(this);
   }
 
   render() {
-    const decoded = this.props.auth ? this.jwtDecode(this.props.auth) : null;
+    const decoded = this.props.auth ? jwt_decode(this.props.auth) : null;
 
     let role = null;
     let expired = true;

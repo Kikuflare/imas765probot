@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import parse from 'date-fns/parse';
 
 const axios = require('axios');
-const parse = require('date-fns/parse');
 
 class Review extends Component {
   constructor(props) {
@@ -211,7 +211,7 @@ class Review extends Component {
             <td className="no-wrap">{row.username}</td>
             <td className="break-all">{row.comment}</td>
             <td className="no-wrap">{this.statusFormatter(row.status)}</td>
-            <td className="no-wrap">{row.timestamp ? parse(row.timestamp).toString() : ''}</td>
+            <td className="no-wrap">{row.timestamp ? parse(row.timestamp, 'yyyy-MM-dd HH:mm:ssX', new Date()).toString() : ''}</td>
           </tr>
         );
       });

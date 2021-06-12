@@ -100,9 +100,9 @@ function AdminRouteHandler(pool, dbx) {
 
     res.set('Content-Type', 'text/plain');
 
-    dbx.filesGetTemporaryLink({path: key})
+    return dbx.filesGetTemporaryLink({path: key})
       .then(response => {
-        const link = response.link;
+        const link = response.result.link;
         return res.send(link);
       })
       .catch(err => {
@@ -145,6 +145,16 @@ function AdminRouteHandler(pool, dbx) {
     };
 
     dbx.filesDeleteV2(params)
+      .catch(err => {
+        if (err.status === 409) {
+          console.log(`Could not delete ${key}, file not found.`);
+        }
+        else {
+          console.log(err);
+        }
+
+        return Promise.resolve();
+      })
       .then(response => {
         const statement = "DELETE FROM uploads WHERE filename = $1";
         const data = [filename];
@@ -152,12 +162,6 @@ function AdminRouteHandler(pool, dbx) {
         return this.pool.query(statement, data);
       })
       .then(response => {
-        res.set('Content-Type', 'text/plain');
-        return res.end();
-      })
-      .catch(err => {
-        console.log(err);
-        res.status(500);
         res.set('Content-Type', 'text/plain');
         return res.end();
       });
@@ -218,8 +222,8 @@ function AdminRouteHandler(pool, dbx) {
           };
 
           return dbx.filesDownload(params)
-            .then(data => {
-              return sharp(data.fileBinary)
+            .then(response => {
+              return sharp(response.result.fileBinary)
                 .jpeg()
                 .toBuffer()
                 .then(buffer => {
@@ -268,7 +272,7 @@ function AdminRouteHandler(pool, dbx) {
       })
       .then(() => {
         res.set('Content-Type', 'text/plain');
-        res.end();
+        return res.end();
       })
       .catch(err => {
         console.error(err);

@@ -1,8 +1,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import parse from 'date-fns/parse';
 
 const axios = require('axios');
-const parse = require('date-fns/parse');
 
 class UploadLog extends React.Component {
   constructor(props) {
@@ -76,7 +76,7 @@ class UploadLog extends React.Component {
   }
 
   dateFormatter(date) {
-    return date ? parse(date).toString() : '';
+    return date ? parse(date, 'yyyy-MM-dd HH:mm:ssX', new Date()).toString() : '';
   }
 
   statusFormatter(status) {

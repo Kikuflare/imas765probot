@@ -7,6 +7,8 @@ const Promise = require('bluebird');
 const mime = require('mime-types');
 const fs = require("fs");
 const moment = require('moment');
+const mkdirp = require('mkdirp');
+const instanceId = require("crypto").randomBytes(4).toString("hex");
 
 // Bluebird setting
 Promise.onPossiblyUnhandledRejection(error => {
@@ -74,19 +76,19 @@ module.exports = class TwitterBot {
         })
         .then(() => {
           const fileName = path.basename(filepath);
-          console.log(`${this.screenName}: Tweeted file ${fileName}`);
+          console.log(`[${instanceId}] ${this.screenName}: Tweeted file ${fileName}`);
 
           return this.recordTweetEnabled ? this.recordTweet(filepath, comment) : Promise.resolve();
         })
         .catch(err => {
           if (err && err.response && err.response.status === 409) {
-            console.log(`${this.screenName}: All download attempts failed.`);
+            console.log(`[${instanceId}] ${this.screenName}: All download attempts failed.`);
           }
           else if (err && err.code === 130) {
-            console.log(`${this.screenName}: Failed to tweet, Twitter is over capacity.`);
+            console.log(`[${instanceId}] ${this.screenName}: Failed to tweet, Twitter is over capacity.`);
           }
           else {
-            console.log(`${this.screenName}: An error occurred while attempting to tweet, failed filepath was ${filepath}`);
+            console.log(`[${instanceId}] ${this.screenName}: An error occurred while attempting to tweet, failed filepath was ${filepath}`);
             console.log(err);
           }
 
@@ -143,7 +145,7 @@ module.exports = class TwitterBot {
           return this.bulkInsert(queue.slice().reverse());
         })
         .catch(err => {
-          console.log(`${this.screenName} : An error occurred while attempting to enqueue.`);
+          console.log(`[${instanceId}] ${this.screenName} : An error occurred while attempting to enqueue.`);
           console.log(err);
           return Promise.reject(err);
         });
@@ -174,7 +176,7 @@ module.exports = class TwitterBot {
           return this.bulkInsert(queue.slice().reverse());
         })
         .catch(err => {
-          console.log(`${this.screenName} : An error occurred while attempting to enqueue.`);
+          console.log(`[${instanceId}] ${this.screenName} : An error occurred while attempting to enqueue.`);
           console.log(err);
           return Promise.reject(err);
         });
@@ -213,15 +215,15 @@ module.exports = class TwitterBot {
           }
         })
         .catch(err => {
-          if (err && err.response && err.response.status === 409) {
-            console.log(`${this.screenName}: Could not download ${filepath}, the file does not exist in the Dropbox folder.`);
+          if (err && err.status === 409) {
+            console.log(`[${instanceId}] ${this.screenName}: Could not download ${filepath}, the file does not exist in the Dropbox folder.`);
           }
           else if (err && err.name === 'FetchError') {
-            console.log(`${this.screenName}: ${err.message}`);
+            console.log(`[${instanceId}] ${this.screenName}: ${err.message}`);
             return Promise.reject(err);
           }
           else {
-            console.log(`${this.screenName} : An error occurred while attempting to download the latest file.`);
+            console.log(`[${instanceId}] ${this.screenName} : An error occurred while attempting to download the latest file.`);
             console.log(err);
           }
 
@@ -235,7 +237,7 @@ module.exports = class TwitterBot {
     this.downloadFile = filepath => {
       return this.createDirectory(filepath)
         .then(() => this.getObject(filepath))
-        .then(result => this.writeFile(filepath, result));
+        .then(response => this.writeFile(filepath, response.result));
     };
     
     
@@ -260,7 +262,7 @@ module.exports = class TwitterBot {
       const stat = fs.statSync(path.join(__dirname, filepath));
 
       if (stat.size === 0) {
-        console.log(`${this.screenName} : File size is 0!`);
+        console.log(`[${instanceId}] ${this.screenName} : File size is 0!`);
         // TODO: handle this case
       }
 
@@ -270,7 +272,7 @@ module.exports = class TwitterBot {
         media_type : mimeType,
       })
         .catch(err => {
-          console.log(`${this.screenName} : INIT failed`);
+          console.log(`[${instanceId}] ${this.screenName} : INIT failed`);
           return Promise.reject(err);
         });
     };
@@ -283,7 +285,7 @@ module.exports = class TwitterBot {
       const stat = fs.statSync(readPath);
 
       if (stat.size === 0) {
-        console.log(`${this.screenName} : File size is 0!`);
+        console.log(`[${instanceId}] ${this.screenName} : File size is 0!`);
         // TODO: handle this case
       }
 
@@ -327,7 +329,7 @@ module.exports = class TwitterBot {
             })
             .catch(err => {
               isError = true;
-              console.log(`${this.screenName} : APPEND failed`);
+              console.log(`[${instanceId}] ${this.screenName} : APPEND failed`);
               return reject(err);
             });
         });
@@ -354,7 +356,7 @@ module.exports = class TwitterBot {
       })
         .then(() => Promise.resolve(mediaIdString))
         .catch(err => {
-          console.log(`${this.screenName} : FINALIZE failed`);
+          console.log(`[${instanceId}] ${this.screenName} : FINALIZE failed`);
           return Promise.reject(err);
         });
     };
@@ -369,7 +371,7 @@ module.exports = class TwitterBot {
      
       return this.client.post('statuses/update', payload)
         .catch(err => {
-          console.log(`${this.screenName} : status update failed`);
+          console.log(`[${instanceId}] ${this.screenName} : status update failed`);
           return Promise.reject(err);
         });
     };
@@ -378,8 +380,7 @@ module.exports = class TwitterBot {
     // Create directories
     this.createDirectory = filepath => {
       const dirname = path.dirname(path.join(__dirname, filepath));
-      const mkdirp = Promise.promisify(require('mkdirp'));
-     
+
       return mkdirp(dirname);
     };
 
@@ -410,7 +411,7 @@ module.exports = class TwitterBot {
         });
 
         writeStream.on('error', err => {
-          console.log(`${this.screenName} : An error occurred while attempting to write to file. savePath: ${savePath}`);
+          console.log(`[${instanceId}] ${this.screenName} : An error occurred while attempting to write to file. savePath: ${savePath}`);
           console.log(err);
           return reject(err);
         });
@@ -434,11 +435,11 @@ module.exports = class TwitterBot {
       const items = [];
       
       return this.dbx.filesListFolder(params)
-        .then(result => {
-          items.push(...result.entries);
+        .then(response => {
+          items.push(...response.result.entries);
 
-          if (result.has_more) {
-            return this.listObjectsContinue(result.cursor)
+          if (response.result.has_more) {
+            return this.listObjectsContinue(response.result.cursor)
               .then(next => {
                 items.push(...next);
                 return Promise.resolve(items);
@@ -460,11 +461,11 @@ module.exports = class TwitterBot {
       const items = [];
 
       return this.dbx.filesListFolderContinue(params)
-        .then(result => {
-          items.push(...result.entries);
+        .then(response => {
+          items.push(...response.result.entries);
 
-          if (result.has_more) {
-            return this.listObjectsContinue(result.cursor)
+          if (response.result.has_more) {
+            return this.listObjectsContinue(response.result.cursor)
               .then(next => {
                 items.push(...next);
                 return Promise.resolve(items);
@@ -571,18 +572,18 @@ module.exports = class TwitterBot {
           return Promise.each(values, value => {
             return client.query(statement, [value, null, moment().utcOffset(0).format('YYYY-MM-DD HH:mm:ss.SSS')])
               .catch(err => {
-                console.log(`${this.screenName}: Failed to insert ${value}`);
+                console.log(`[${instanceId}] ${this.screenName}: Failed to insert ${value}`);
                 Promise.resolve();
               });
           });
         })
         .then(() => {
           pgClient.release();
-          console.log(`${this.screenName}: File queue shuffled.`);
+          console.log(`[${instanceId}] ${this.screenName}: File queue shuffled.`);
           return Promise.resolve();
         })
         .catch(err => {
-          console.log(`${this.screenName} : An error occurred while attempting to bulkInsert.`);
+          console.log(`[${instanceId}] ${this.screenName} : An error occurred while attempting to bulkInsert.`);
           return Promise.reject(err);
         });
     };
@@ -652,7 +653,7 @@ module.exports = class TwitterBot {
 
     this.tweetRetryHandler = err => {
       if (err && err.message && err.message.includes('400 Bad Request')) {
-        console.log(`${this.screenName}: ${err.message} - Retrying...`);
+        console.log(`[${instanceId}] ${this.screenName}: ${err.message} - Retrying...`);
 
         return true;
       }

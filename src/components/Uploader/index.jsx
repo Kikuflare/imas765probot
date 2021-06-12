@@ -66,7 +66,6 @@ class Uploader extends React.Component {
           <li className="upload-guide-text"><strong>{this.props.lang.guide.line3}</strong></li>
           <li className="upload-guide-text">{this.props.lang.guide.line4}</li>
           <li className="upload-guide-text">{this.props.lang.guide.line5}</li>
-          <li className="upload-guide-text"><s>{this.props.lang.guide.line6}</s></li>
           <li className="upload-guide-text">{this.props.lang.guide.line7}</li>
         </ul>
       </div>
@@ -315,12 +314,15 @@ class Uploader extends React.Component {
     const config = {
       headers: {
         'Content-Type': 'application/json'
-      }
+      },
+      timeout: 20000
     };
 
     axios.post('/api/post-comment', data, config)
       .then(response => {
-        this.setState({displaySuccess: true, uploadDisabled: true, isUploading: false});
+        if (!filename.endsWith('-FAILED')) {
+          this.setState({displaySuccess: true, uploadDisabled: true, isUploading: false});
+        }
       })
       .catch(err => {
         this.setState({errors: ['uploadError'], isUploading: false});
@@ -354,10 +356,9 @@ class Uploader extends React.Component {
       const data = reader.result;
 
       const config = {
-        headers: {
-          'Content-Type': 'application/octet-stream'
-        },
-        onUploadProgress: this.updateProgress.bind(this)
+        headers: { 'Content-Type': 'application/octet-stream' },
+        onUploadProgress: this.updateProgress.bind(this),
+        timeout: 60000
       };
 
       axios.post(signedRequest, data, config)
