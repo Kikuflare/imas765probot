@@ -1,42 +1,31 @@
 import React from 'react';
-import { Redirect } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { setToken } from '../../actions/auth';
 
-const queryString = require('query-string');
+const ADMIN_ROLE = 'admin';
 
 class Login extends React.Component {
   constructor(props) {
     super(props);
 
-    const token = queryString.parse(window.location.search).token;
-
-    if (token) {
-      props.setToken(token);
-
-      localStorage.setItem('token', token);
+    if (props.role === ADMIN_ROLE) {
+      props.history.push('/admin');
     }
-
-    this.state = {
-      token: token
-    };
+    else {
+      props.history.push('/');
+    }
   }
 
   render() {
-    if (this.state.token) {
-      return <Redirect to='/admin'/>;
-    }
-    else {
-      return (
-        <div>
-          <div className="loading loading-lg" />
-        </div>
-      );
-    }
+    return (
+      <div>
+        <div className="loading loading-lg" />
+      </div>
+    );
   }
 }
 
-const mapStateToProps = state => ({ lang: state.lang, auth: state.auth });
-const mapDispatchToProps = dispatch => ({setToken: token => dispatch(setToken(token))});
+const mapStateToProps = state => ({
+  role: state.role
+});
 
-export default connect(mapStateToProps, mapDispatchToProps)(Login);
+export default connect(mapStateToProps)(Login);

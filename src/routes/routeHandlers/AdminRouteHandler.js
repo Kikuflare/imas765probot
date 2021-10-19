@@ -77,7 +77,7 @@ function AdminRouteHandler(pool, dbx) {
   };
 
   this.getUploads = (req, res) => {
-    const statement = "SELECT filename, username, comment, status, timestamp FROM uploads ORDER BY timestamp DESC LIMIT 100";
+    const statement = "SELECT filename, username, twitter_id, comment, status, timestamp FROM uploads ORDER BY timestamp DESC LIMIT 100";
 
     return this.pool.query(statement)
       .then(result => {
@@ -116,7 +116,7 @@ function AdminRouteHandler(pool, dbx) {
   this.rejectUpload = (req, res) => {
     const key = req.body.key;
     const filename = key.replace('/uploads/', '');
-    const approver = req.body.approver;
+    const approver = res.locals.user;
     const remarks = req.body.remarks;
 
     const statement = "UPDATE uploads SET status = 'rejected', approver = $1, remarks = $2 WHERE filename = $3";
@@ -177,7 +177,7 @@ function AdminRouteHandler(pool, dbx) {
     const extension = path.extname(filename);
     const source = req.body.source;
     const idol = req.body.idol;
-    const approver = req.body.approver;
+    const approver = res.locals.user;
     const remarks = req.body.remarks;
 
     let newKey;

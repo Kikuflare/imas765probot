@@ -71,9 +71,7 @@
 }
 
 .page-content {
-  padding-bottom: 15px;
-  padding-left: 15px;
-  padding-right: 15px;
+  padding: 15px;
 }
 
 .flexbox {
@@ -136,6 +134,18 @@
   font-size: 0.85em;
 }
 
+.upload-guide-text-large {
+  font-size: 1.1em;
+}
+
 .no-list-style {
   list-style: none;
+}
+
+.warning-text {
+  color: #FF0F0F
+}
+
+.small-alert {
+  width: 300px;
 }

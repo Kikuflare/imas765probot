@@ -3,4 +3,8 @@ const setToken = token => ({
   payload: token
 });
 
-export { setToken };
+const deleteToken = () => ({
+  type: 'DELETE_TOKEN'
+});
+
+export { setToken, deleteToken };

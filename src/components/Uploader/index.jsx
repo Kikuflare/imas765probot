@@ -3,8 +3,12 @@ import ReactDOM from 'react-dom';
 import { connect } from 'react-redux';
 import platform from 'platform';
 import { Link } from 'react-router-dom';
+import { deleteToken } from '../../actions/auth';
+import { deleteUsername } from '../../actions/username';
+import { deleteRole } from '../../actions/role';
 
 const axios = require('axios');
+const TWITTER_HANDLE_REGEX = new RegExp(/^[a-zA-Z0-9_]*$/i);
 
 class Uploader extends React.Component {
   constructor(props) {
@@ -43,10 +47,10 @@ class Uploader extends React.Component {
         <h3>{this.props.lang.label.uploader}</h3>
 
         {this.renderGuide()}
+        {this.renderUsernameSection()}
         {this.renderFileSelect()}
         {this.renderSourceSection()}
         {this.renderIdolSection()}
-        {this.renderUsernameSection()}
         {this.renderCommentSection()}
         {this.renderProgressBar()}
         {this.renderButtons()}
@@ -63,7 +67,7 @@ class Uploader extends React.Component {
         <ul>
           <li className="upload-guide-text">{this.props.lang.guide.line1}</li>
           <li className="upload-guide-text">{this.props.lang.guide.line2}</li>
-          <li className="upload-guide-text"><strong>{this.props.lang.guide.line3}</strong></li>
+          <li className="upload-guide-text-large"><strong className="warning-text">{this.props.lang.guide.line3}</strong></li>
           <li className="upload-guide-text">{this.props.lang.guide.line4}</li>
           <li className="upload-guide-text">{this.props.lang.guide.line5}</li>
           <li className="upload-guide-text">{this.props.lang.guide.line7}</li>
@@ -100,7 +104,7 @@ class Uploader extends React.Component {
 
   renderIdolSection() {
     return (
-      <div className="default-margin-bottom">
+      <div>
         <div><label><strong>{this.props.lang.label.idol}</strong></label></div>
         <div className='flexbox-columns' style={{height: '96px', width: '245px'}}>
           {this.idols.map(this.idolMapper.bind(this))}
@@ -111,9 +115,14 @@ class Uploader extends React.Component {
 
   renderUsernameSection() {
     return (
-      <div>
-        <div><label htmlFor="username-box"><strong>{this.props.lang.label.twitterUsername} ({this.props.lang.label.optional})</strong></label></div>
-        <div className='guide-text'>{this.props.lang.label.twitterUsernameDescription}</div>
+      <div className="default-margin-bottom">
+        <div className="flexbox">
+          <div className="default-margin-right">
+            <div><label htmlFor="username-box"><strong>{this.props.lang.label.twitterUsername} <span className='warning-text'>({this.props.lang.label.required})</span></strong></label></div>
+            <div className='guide-text'>{this.props.lang.label.twitterUsernameDescription}</div>
+          </div>
+          {this.renderLoginButton()}
+        </div>
 
         <div className="flexbox width-limiter">
           <div className="flexitem input-group default-margin-right">
@@ -122,9 +131,11 @@ class Uploader extends React.Component {
               type="text"
               className="form-input"
               id="username-box"
-              maxLength="25"
+              maxLength="15"
+              pattern="[a-zA-Z0-9_]*"
               placeholder={this.props.lang.label.username}
-              value={this.state.username}
+              value={this.props.username ? this.props.username : this.state.username}
+              disabled={this.props.username}
               onChange={event => {
                 this.setState({username: event.target.value, errors: [], displaySuccess: false});
 
@@ -138,6 +149,7 @@ class Uploader extends React.Component {
               <input
                 type="checkbox"
                 checked={this.state.rememberMe}
+                disabled={this.props.username}
                 onChange={() => {
                   const newRememberMeState = !this.state.rememberMe;
 
@@ -153,6 +165,30 @@ class Uploader extends React.Component {
         </div>
       </div>
     );
+  }
+
+  renderLoginButton() {
+    if (this.props.auth) {
+      return (
+        <div>
+          <button
+            className="btn btn-error"
+            onClick={() => {
+              this.props.deleteToken();
+              this.props.deleteUsername();
+              this.props.deleteRole();
+              localStorage.removeItem('token');
+            }}>{this.props.lang.label.logout}</button>
+        </div>
+      );
+    }
+    else {
+      return (
+        <div>
+          <a href="/api/login" className="btn btn-primary">{this.props.lang.label.loginWithTwitter}</a>
+        </div>
+      );
+    }
   }
 
   renderCommentSection() {
@@ -185,7 +221,7 @@ class Uploader extends React.Component {
       <div className="default-margin-bottom">
         <button
           className={"btn btn-primary default-margin-right" + (this.state.isUploading ? ' loading' : '')}
-          disabled={this.state.uploadDisabled || !(this.state.file && this.state.source && this.state.idol)}
+          disabled={this.state.uploadDisabled || !(this.state.file && this.state.source && this.state.idol && (this.props.username || this.state.username))}
           onClick={this.validateInput.bind(this)}>{this.props.lang.label.upload}</button>
         <button
           className="btn"
@@ -220,7 +256,8 @@ class Uploader extends React.Component {
           <div className="toast toast-success">
             <button className="btn btn-clear float-right" onClick={() => this.setState({displaySuccess: false})}></button>
             <div>{this.props.lang.alert.thankYouMessage}</div>
-            <div><p>{this.props.lang.alert.pleaseCheckLog}</p> <Link to="/upload-log"> →{this.props.lang.label.uploadLog}</Link></div>
+            <div><Link to="/ranking"> →{this.props.lang.label.ranking}</Link></div>
+            <div><Link to="/upload-log"> →{this.props.lang.label.uploadLog}</Link></div>
           </div>
         </div>
       );
@@ -305,10 +342,12 @@ class Uploader extends React.Component {
   postComment(filename, originalFilename) {
     const data = {
       comment: this.state.comment,
-      username: this.state.username,
+      username: this.props.username ? this.props.username : this.state.username,
       filename: filename,
       platform: platform.description,
-      originalFilename: originalFilename
+      originalFilename: originalFilename,
+      idol: this.state.idol,
+      source: this.state.source
     };
 
     const config = {
@@ -317,6 +356,10 @@ class Uploader extends React.Component {
       },
       timeout: 20000
     };
+
+    if (this.props.auth) {
+      config.headers.Authorization = `Bearer ${this.props.auth}`;
+    }
 
     axios.post('/api/post-comment', data, config)
       .then(response => {
@@ -397,6 +440,10 @@ class Uploader extends React.Component {
 
     const errors = [];
 
+    if (!TWITTER_HANDLE_REGEX.test(this.state.username)) {
+      errors.push('invalidUsernameError');
+    }
+
     if (this.state.file) {
       // Exceeded file size error
       if (this.state.file.size > this.SIZE_LIMIT) {
@@ -448,6 +495,11 @@ class Uploader extends React.Component {
   }
 }
 
-const mapStateToProps = state => ({ lang: state.lang, auth: state.auth });
+const mapStateToProps = state => ({ lang: state.lang, auth: state.auth, username: state.username });
+const mapDispatchToProps = dispatch => ({
+  deleteToken: () => dispatch(deleteToken()),
+  deleteUsername: () => dispatch(deleteUsername()),
+  deleteRole: () => dispatch(deleteRole())
+});
 
-export default connect(mapStateToProps)(Uploader);
+export default connect(mapStateToProps, mapDispatchToProps)(Uploader);

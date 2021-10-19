@@ -14,8 +14,8 @@ const Strategy = require('passport-twitter').Strategy;
 const trustProxy = process.env.DYNO ? true : false;
 
 passport.use(new Strategy({
-  consumerKey: process.env.CONSUMER_KEY,
-  consumerSecret: process.env.CONSUMER_SECRET,
+  consumerKey: process.env.LOGIN_CONSUMER_KEY,
+  consumerSecret: process.env.LOGIN_CONSUMER_SECRET,
   callbackURL: '/oauth/callback',
   proxy: trustProxy
 }, (token, tokenSecret, profile, cb) => {
@@ -37,6 +37,8 @@ module.exports = (app, pool) => {
   const uploadLogRouteHandler = new (require('./routeHandlers/UploadLogRouteHandler'))(pool);
   const adminRouteHandler = new (require('./routeHandlers/AdminRouteHandler'))(pool, dbx);
   const authenticationRouteHandler = new (require('./routeHandlers/AuthenticationRouteHandler'))(pool);
+  const settingsRouteHandler = new (require('./routeHandlers/SettingsRouteHandler'))(pool);
+  const rankingRouteHandler = new (require('./routeHandlers/RankingRouteHandler'))(pool);
 
   app.use(passport.initialize());
 
@@ -50,6 +52,7 @@ module.exports = (app, pool) => {
   // Authentication routes
   app.get('/api/login', passport.authenticate('twitter'));
   app.get('/oauth/callback', passport.authenticate('twitter', { failureRedirect: '/'}), authenticationRouteHandler.login);
+  app.get('/api/refresh', isAuthenticated(), authenticationRouteHandler.refresh);
   
   // Admin routes
   app.post('/api/enqueue', isAuthenticated('admin'), adminRouteHandler.enqueue);
@@ -60,4 +63,11 @@ module.exports = (app, pool) => {
   app.post('/api/accept-upload', isAuthenticated('admin'), adminRouteHandler.acceptUpload);
   app.get('/api/get-queue', isAuthenticated('admin'), adminRouteHandler.getQueue);
   app.post('/api/dequeue-file', isAuthenticated('admin'), adminRouteHandler.dequeueFile);
+
+  // Settings routes
+  app.get('/api/get-settings', isAuthenticated(), settingsRouteHandler.getSettings);
+  app.post('/api/set-settings', isAuthenticated(), settingsRouteHandler.setSettings);
+
+  // Ranking routes
+  app.get('/api/get-ranking', rankingRouteHandler.getRanking);
 };

@@ -33,8 +33,8 @@ class UploadLog extends React.Component {
               <tr>
                 <th>{this.props.lang.label.idol}</th>
                 <th>{this.props.lang.label.source}</th>
-                <th>{this.props.lang.label.date}</th>
                 <th>{this.props.lang.label.status}</th>
+                <th>{this.props.lang.label.date}</th>
                 <th>{this.props.lang.label.approver}</th>
                 <th>{this.props.lang.label.remarks}</th>
               </tr>
@@ -57,8 +57,8 @@ class UploadLog extends React.Component {
           <tr key={index}>
             <td className="no-wrap">{this.idolFormatter(item.idol)}</td>
             <td className="no-wrap">{this.sourceFormatter(item.source)}</td>
-            <td className="no-wrap">{this.dateFormatter(item.date)}</td>
             <td className="no-wrap">{this.statusFormatter(item.status)}</td>
+            <td className="no-wrap">{this.dateFormatter(item.date)}</td>
             <td className="no-wrap">{this.approverFormatter(item.approver)}</td>
             <td>{item.remarks}</td>
           </tr>
@@ -110,6 +110,6 @@ class UploadLog extends React.Component {
   }
 }
 
-const mapStateToProps = state => ({ lang: state.lang});
+const mapStateToProps = state => ({ lang: state.lang });
 
 export default connect(mapStateToProps)(UploadLog);

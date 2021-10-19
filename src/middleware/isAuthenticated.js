@@ -20,12 +20,16 @@ module.exports = role => {
       const jwt = require('jsonwebtoken');
       const decoded = jwt.verify(token, apiSecret);
 
-      if (decoded.role !== role) {
+      if (role && decoded.role !== role) {
         res.status(403);
         return res.end();
       }
+      
+      res.locals.user = decoded.sub ? decoded.sub : null;
+      res.locals.role = decoded.role ? decoded.role : null;
+      res.locals.id = decoded.id ? decoded.id : null;
     }
-    catch(err) {
+    catch (err) {
       // Token is invalid. Do not allow any further action.
       res.status(403);
       return res.end();

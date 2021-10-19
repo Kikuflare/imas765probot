@@ -17,28 +17,34 @@ function AuthenticationRouteHandler(pool) {
     return this.pool.query(statement, data)
       .then(result => {
         const rowCount = result.rowCount;
+        const timestamp = moment().utcOffset(0).format('YYYY-MM-DD HH:mm:ss.SSS');
 
         if (rowCount < 1) {
           console.log(`Creating new user with twitter_id: ${twitterId}`);
 
-          const statement = "INSERT INTO users (twitter_id, twitter_username, user_role, date_registered) VALUES ($1, $2, $3, $4)";
-          const data = [twitterId, twitterUsername, BASIC_ROLE, moment().utcOffset(0).format('YYYY-MM-DD HH:mm:ss.SSS')];
+          const statement = "INSERT INTO users (twitter_id, twitter_username, user_role, date_registered, last_modified, ranking, anonymous) VALUES ($1, $2, $3, $4, $5, $6, $7)";
+          const data = [twitterId, twitterUsername, BASIC_ROLE, timestamp, timestamp, false, true];
 
           return this.pool.query(statement, data)
             .then(() => Promise.resolve(BASIC_ROLE));
         }
         else {
           const role = result.rows[0].user_role;
-          return Promise.resolve(role);
+          const statement = "UPDATE users SET twitter_username = $1, last_modified = $2 WHERE twitter_id = $3";
+          const data = [twitterUsername, timestamp, twitterId];
+
+          return this.pool.query(statement, data)
+            .then(() => Promise.resolve(role));
         }
       })
       .then(role => {
         const claim = {
           sub: twitterUsername,
-          role: role
+          role: role,
+          id: twitterId
         };
         
-        const token = jwt.sign(claim, apiSecret, { expiresIn: '1h' });
+        const token = jwt.sign(claim, apiSecret, { expiresIn: '24h' });
 
         res.redirect(`/login-redirect?token=${token}`);
       });
@@ -87,6 +93,45 @@ function AuthenticationRouteHandler(pool) {
         return res.end();
       });
   };
+
+  // Generates a new authentication token using an old one
+  this.refresh = (req, res) => {
+    const twitterId = res.locals.id;
+
+    if (twitterId) {
+      const statement = "SELECT user_role, twitter_username FROM users WHERE twitter_id = $1 LIMIT 1";
+      const data = [twitterId];
+
+      return this.pool.query(statement, data)
+        .then(result => {
+          const rowCount = result.rowCount;
+
+          if (rowCount < 1) {
+            res.status(400);
+            return res.end();
+          }
+          else {
+            const role = result.rows[0].user_role;
+            const twitterUsername = result.rows[0].twitter_username;
+
+            const claim = {
+              sub: twitterUsername,
+              role: role,
+              id: twitterId
+            };
+        
+            const refresh = jwt.sign(claim, apiSecret, { expiresIn: '24h' });
+        
+            res.set('Content-Type', 'application/json');
+            return res.send(JSON.stringify({auth: refresh}));
+          }
+        })
+    }
+    else {
+      res.status(400);
+      return res.end();
+    }
+  }
 }
 
 module.exports = AuthenticationRouteHandler;

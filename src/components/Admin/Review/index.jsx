@@ -7,7 +7,7 @@ const axios = require('axios');
 class Review extends Component {
   constructor(props) {
     super(props);
-
+    
     this.state = {
       data: [],
       showAll: false,
@@ -20,7 +20,6 @@ class Review extends Component {
       imageURL: null,
       imageWidth: null,
       imageHeight: null,
-      approver: localStorage.getItem('approverName') ? localStorage.getItem('approverName') : '',
       usePresetRemark: true,
       remarks: '',
       addToQueue: true,
@@ -70,6 +69,7 @@ class Review extends Component {
                 <th>Idol</th>
                 <th>Source</th>
                 <th>Uploader</th>
+                <th>Id</th>
                 <th>Comment</th>
                 <th>Status</th>
                 <th>Date</th>
@@ -129,21 +129,6 @@ class Review extends Component {
                   <i className="icon icon-arrow-right mr-1" />Advanced Options
                 </label>
                 <div className="accordion-body default-padding-top">
-                  <div className="form-group flexbox">
-                    <label className="form-label default-margin-right" htmlFor="approver-name"><strong>Approver</strong></label>
-                    <div className="input-group flexitem">
-                      <span className="input-group-addon">@</span>
-                      <input
-                        className="form-input"
-                        type="text" id="approver-name"
-                        value={this.state.approver}
-                        onChange={event => {
-                          this.setState({approver: event.target.value});
-
-                          localStorage.setItem('approverName', event.target.value);
-                        }} />
-                    </div>
-                  </div>
                   <div className="form-group flexbox">
                     <label className="form-checkbox">
                       <input
@@ -208,7 +193,8 @@ class Review extends Component {
           <tr key={row.filename + (new Date(row.timestamp).toString())}>
             <td className="no-wrap" onClick={this.showImage.bind(this, row.filename)}>{this.idolFormatter(idol)}</td>
             <td className="no-wrap" onClick={this.showImage.bind(this, row.filename)}>{source}</td>
-            <td className="no-wrap">{row.username}</td>
+            <td className="no-wrap"><a href={`https://twitter.com/${row.username}`} target="_blank">{row.username}</a></td>
+            <td className="no-wrap">{row.twitter_id}</td>
             <td className="break-all">{row.comment}</td>
             <td className="no-wrap">{this.statusFormatter(row.status)}</td>
             <td className="no-wrap">{row.timestamp ? parse(row.timestamp, 'yyyy-MM-dd HH:mm:ssX', new Date()).toString() : ''}</td>
@@ -389,11 +375,9 @@ class Review extends Component {
       data.source = this.state.imageSource;
       data.idol = this.state.idol;
       data.remarks = this.state.usePresetRemark ? this.presets[this.state.preset] : this.state.remarks;
-      data.approver = this.state.approver;
     }
     else if (action === 'reject') {
       data.remarks = this.state.usePresetRemark ? this.presets[this.state.preset] : this.state.remarks;
-      data.approver = this.state.approver;
     }
 
     axios.post(`/api/${action}-upload`, data, { headers: { Authorization: authorization } })

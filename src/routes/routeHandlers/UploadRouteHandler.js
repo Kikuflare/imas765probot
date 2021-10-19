@@ -1,20 +1,27 @@
 const moment = require('moment');
 const mime = require('mime-types');
+const jwt = require('jsonwebtoken');
 
 const acceptedSources = require('../../constants/acceptedSources');
 const acceptedFileFormats = require('../../constants/acceptedFileFormats');
 const idols = require('../../constants/idols');
+const apiSecret = process.env.API_SECRET;
 
 function UploadRouteHandler(pool, dbx) {
   this.pool = pool;
   this.dbx = dbx;
   
   this.postComment = (req, res) => {
+    const authorization = req.get('Authorization');
+
     let platform = req.body.platform;
     let filename = req.body.filename;
     let originalFilename = req.body.originalFilename;
     let username = req.body.username;
     let comment = req.body.comment;
+    const twitterId = getId(authorization);
+    let idol = req.body.idol;
+    let source = req.body.source;
 
     // Do some validation on inputs
     filename = filename ? filename.substring(0, 200) : null;
@@ -23,8 +30,11 @@ function UploadRouteHandler(pool, dbx) {
     comment = comment ? comment.substring(0, 500) : null;
     originalFilename = originalFilename ? originalFilename.substring(0, 200) : null;
 
-    const statement = "INSERT INTO uploads(filename, username, platform, comment, timestamp, status, original_filename) values($1, $2, $3, $4, $5, $6, $7)";
-    const data = [filename, username, platform, comment, moment.utc().format('YYYY-MM-DD HH:mm:ss.SSS'), 'unprocessed', originalFilename];
+    if (!idols.includes(idol)) { idol = null; }
+    if (!acceptedSources.includes(source)) { source = null; }
+
+    const statement = "INSERT INTO uploads(filename, username, platform, comment, timestamp, status, original_filename, twitter_id, idol, source) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)";
+    const data = [filename, username, platform, comment, moment.utc().format('YYYY-MM-DD HH:mm:ss.SSS'), 'unprocessed', originalFilename, twitterId, idol, source];
 
     return this.pool.query(statement, data)
       .then(() => {
@@ -83,6 +93,28 @@ function UploadRouteHandler(pool, dbx) {
         });
     }
   };
+}
+
+const getId = authorization => {
+  if (!authorization) {
+    return null;
+  }
+  
+  if (!authorization.startsWith("Bearer ")) {
+    return null;
+  }
+  
+  const token = authorization.replace('Bearer ', '');
+  
+  try {
+    const decoded = jwt.verify(token, apiSecret);
+
+    return decoded.id ? decoded.id : null;
+  }
+  catch(err) {
+    // Token is invalid.
+    return null;
+  }
 }
 
 module.exports = UploadRouteHandler;
