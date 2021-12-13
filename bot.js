@@ -135,8 +135,10 @@ module.exports = class TwitterBot {
             .filter(item => {
               const filepath = item.path_lower;
 
-              // Filter out folder names and birthday files
-              return filepath.includes('.') && !filepath.includes('birthday');
+              // Filter out folder names and birthday/seasonal files
+              return filepath.includes('.')
+                && !filepath.includes('birthday')
+                && !filepath.includes('seasonal');
             })
             .map(item => item.path_lower);
           
@@ -166,8 +168,10 @@ module.exports = class TwitterBot {
             .filter(item => {
               const filepath = item.path_lower;
 
-              // Filter out folder names and birthday files
-              return filepath.includes('.') && !filepath.includes('birthday');
+              // Filter out folder names and birthday/seasonal files
+              return filepath.includes('.')
+                && !filepath.includes('birthday')
+                && !filepath.includes('seasonal');
             })
             .map(item => item.path_lower);
           

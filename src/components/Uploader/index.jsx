@@ -173,6 +173,7 @@ class Uploader extends React.Component {
         <div>
           <button
             className="btn btn-error"
+            disabled={this.state.isUploading}
             onClick={() => {
               this.props.deleteToken();
               this.props.deleteUsername();
@@ -185,7 +186,7 @@ class Uploader extends React.Component {
     else {
       return (
         <div>
-          <a href="/api/login" className="btn btn-primary">{this.props.lang.label.loginWithTwitter}</a>
+          <a href="/api/login" className="btn btn-primary" disabled={this.state.isUploading}>{this.props.lang.label.loginWithTwitter}</a>
         </div>
       );
     }

@@ -77,8 +77,26 @@ function AdminRouteHandler(pool, dbx) {
   };
 
   this.getUploads = (req, res) => {
-    const statement = "SELECT filename, username, twitter_id, comment, status, timestamp FROM uploads ORDER BY timestamp DESC LIMIT 100";
+    const statement = 'SELECT idol, source, filename, username, twitter_id, comment, status, timestamp FROM uploads ORDER BY timestamp DESC LIMIT 200';
 
+    return this.pool.query(statement)
+      .then(result => {
+        res.set('Content-Type', 'application/json');
+
+        const uploads = result.rows.map(row => {
+          // Format the timestamp and replace it
+          row.timestamp = moment(row.timestamp, 'YYYYMMDDHHmmssSSS').format('YYYY-MM-DD HH:mm:ss') + "Z";
+
+          return row;
+        });
+
+        return res.send(uploads);
+      });
+  };
+
+  this.getUnprocessedUploads = (req, res) => {
+    const statement = `SELECT idol, source, filename, username, twitter_id, comment, status, timestamp FROM uploads WHERE status = 'unprocessed' ORDER BY timestamp DESC LIMIT 200`;
+    
     return this.pool.query(statement)
       .then(result => {
         res.set('Content-Type', 'application/json');

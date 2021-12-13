@@ -14,9 +14,10 @@
     "video": "ビデオ",
     "mobamas": "デレマス",
     "tachie": "立ち絵",
-	  "mirishita": "ミリシタ",
+    "mirishita": "ミリシタ",
     "birthday": "誕生日",
-    "stse": "スターリットシーズン"
+    "stse": "スターリットシーズン",
+    "seasonal": "季節性"
   },
   "idol" : {
     "azusa": "あずさ",
@@ -71,18 +72,22 @@
     "approved": "承認",
     "rejected": "却下",
     "unprocessed": "未処理",
+    "failed": "失敗",
     "showAll": "すべて表示する",
+    "unprocessedOnly": "未処理のみ",
     "noResultsFound": "結果が見つかりませんでした。",
     "loginWithTwitter": "Twitterでログイン",
     "logout": "ログアウト",
     "accessDenied": "アクセスが拒否されました",
     "ranking": "ランキング",
     "anonymous": "匿名",
+    "enableRanking": "ランキングを有効にする",
+    "anonymizeUsername": "ユーザー名を隠す",
     "rankingTitle": "ランキング",
     "approvedCount": "承認数",
     "rank": "順位",
     "anonymousProducer": "名無しP",
-    "settings": "設定",
+    "settings": "アカウント設定",
     "saveButton": "保存"
   },
   "navigation": {
@@ -116,6 +121,8 @@
     "line5": "なるべく字幕の入っていない画像の方が好みます",
     "line6": "グループ画像は利用しません（双海姉妹以外）",
     "line7": "悪い映りの画像はお断りします（例え：顔が隠れている、悪いアングル）",
-    "line8": "ステラステージまたはプラチナスターズの画像は1920x1080のサイズでなければなりません"
+    "line8": "ステラステージまたはプラチナスターズの画像は1920x1080のサイズでなければなりません",
+    "rankingLine1": "ランキングはTwitterでログインしているユーザーのみが対象となります。",
+    "rankingLine2": "ランキングを有効にするには、アカウント設定を確認してください。"
   }
 }

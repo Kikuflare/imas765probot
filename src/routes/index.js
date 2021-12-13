@@ -57,6 +57,7 @@ module.exports = (app, pool) => {
   // Admin routes
   app.post('/api/enqueue', isAuthenticated('admin'), adminRouteHandler.enqueue);
   app.get('/api/get-uploads', isAuthenticated('admin'), adminRouteHandler.getUploads);
+  app.get('/api/get-unprocessed-uploads', isAuthenticated('admin'), adminRouteHandler.getUnprocessedUploads);
   app.get('/api/get-image-url', isAuthenticated('admin'), adminRouteHandler.getImageURL);
   app.post('/api/reject-upload', isAuthenticated('admin'), adminRouteHandler.rejectUpload);
   app.post('/api/delete-upload', isAuthenticated('admin'), adminRouteHandler.deleteUpload);

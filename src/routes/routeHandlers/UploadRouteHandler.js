@@ -34,7 +34,11 @@ function UploadRouteHandler(pool, dbx) {
     if (!acceptedSources.includes(source)) { source = null; }
 
     const statement = "INSERT INTO uploads(filename, username, platform, comment, timestamp, status, original_filename, twitter_id, idol, source) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)";
-    const data = [filename, username, platform, comment, moment.utc().format('YYYY-MM-DD HH:mm:ss.SSS'), 'unprocessed', originalFilename, twitterId, idol, source];
+    const data = [
+      filename, username, platform, comment,
+      moment.utc().format('YYYY-MM-DD HH:mm:ss.SSS'),
+      filename.endsWith('FAILED') ? 'failed' : 'unprocessed',
+      originalFilename, twitterId, idol, source];
 
     return this.pool.query(statement, data)
       .then(() => {

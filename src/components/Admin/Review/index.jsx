@@ -11,6 +11,7 @@ class Review extends Component {
     this.state = {
       data: [],
       showAll: false,
+      getUnprocessedOnly: false,
       isDataLoading: false,
       urlCache: {},
       showModal: false,
@@ -40,7 +41,8 @@ class Review extends Component {
       similarImage: '似た画像があります / Similar image exists',
       twitterResized: 'Twitterで保存した画像は縮小されますのでオリジナル画像を使ってください / Please use the original image instead of an image downloaded from Twitter',
       duplicateFile: '重複ファイル / Duplicate file',
-      wrongOrientation: '横向きに撮影してください / Please record in landscape orientation'
+      wrongOrientation: '横向きに撮影してください / Please record in landscape orientation',
+      accountDoesNotExist: 'このアカウントは存在しません / This account doesn’t exist'
     };
 
     this.renderRemarksForm = this.renderRemarksForm.bind(this);
@@ -51,7 +53,7 @@ class Review extends Component {
       <div>
         <div className="flexbox ">
           <button className="btn btn-primary default-margin-right" onClick={this.getUploads.bind(this)}><strong>{this.props.lang.label.refresh}</strong></button>
-          <div className="form-group">
+          <div className="form-group flexbox">
             <label className="form-checkbox">
               <input
                 type="checkbox"
@@ -59,6 +61,14 @@ class Review extends Component {
                 onChange={() => this.setState({showAll: !this.state.showAll})}
                 />
               <i className="form-icon"></i> {this.props.lang.label.showAll}
+            </label>
+            <label className="form-checkbox">
+              <input
+                type="checkbox"
+                checked={this.state.getUnprocessedOnly}
+                onChange={() => this.setState({getUnprocessedOnly: !this.state.getUnprocessedOnly})}
+                />
+              <i className="form-icon"></i> {this.props.lang.label.unprocessedOnly}
             </label>
           </div>
         </div>
@@ -185,14 +195,10 @@ class Review extends Component {
   renderRows(data) {
     if (data.length > 0) {
       return data.map(row => {
-        const filenameSplit = row.filename.split('-');
-        const idol = filenameSplit[1];
-        const source = filenameSplit[2].split('.')[0];
-
         return (
           <tr key={row.filename + (new Date(row.timestamp).toString())}>
-            <td className="no-wrap" onClick={this.showImage.bind(this, row.filename)}>{this.idolFormatter(idol)}</td>
-            <td className="no-wrap" onClick={this.showImage.bind(this, row.filename)}>{source}</td>
+            <td className="no-wrap" onClick={this.showImage.bind(this, row.filename)}>{this.idolFormatter(row.idol)}</td>
+            <td className="no-wrap" onClick={this.showImage.bind(this, row.filename)}>{row.source}</td>
             <td className="no-wrap"><a href={`https://twitter.com/${row.username}`} target="_blank">{row.username}</a></td>
             <td className="no-wrap">{row.twitter_id}</td>
             <td className="break-all">{row.comment}</td>
@@ -219,11 +225,13 @@ class Review extends Component {
     if (status) {
       switch (status) {
         case 'approved':
-          return <strong style={{color: 'green'}}>{this.props.lang.label[status]}</strong>
+          return <strong style={{color: 'green'}}>{this.props.lang.label[status]}</strong>;
         case 'rejected':
-          return <strong style={{color: 'red'}}>{this.props.lang.label[status]}</strong>
+          return <strong style={{color: 'red'}}>{this.props.lang.label[status]}</strong>;
         case 'unprocessed':
-          return <strong>{this.props.lang.label[status]}</strong>
+          return <strong>{this.props.lang.label[status]}</strong>;
+        case 'failed':
+          return <strong>{this.props.lang.label[status]}</strong>;
         default:
           return '';
       }
@@ -296,9 +304,10 @@ class Review extends Component {
   getUploads() {
     this.setState({data: [], isDataLoading: true});
 
+    const path = `/api/${this.state.getUnprocessedOnly ? 'get-unprocessed-uploads': 'get-uploads'}`;
     const authorization = `Bearer ${this.props.auth}`;
 
-    axios.get('/api/get-uploads?prefix=uploads', { headers: { Authorization: authorization } })
+    axios.get(path, { headers: { Authorization: authorization } })
       .then(response => this.setState({data: response.data, isDataLoading: false}))
       .catch(err => {
         this.setState({isDataLoading: false});

@@ -1,5 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { Link } from 'react-router-dom';
 
 const axios = require('axios');
 
@@ -26,6 +27,9 @@ class Ranking extends React.Component {
           </button>
         </div>
 
+        {this.renderGuide()}
+        {this.renderSettingsLink()}
+        
         <div>
           <table className="table table-hover table-scroll reset-white-space">
             <thead>
@@ -46,6 +50,17 @@ class Ranking extends React.Component {
     );
   }
 
+  renderGuide() {
+    return (
+      <div>
+        <ul>
+          <li className="upload-guide-text">{this.props.lang.guide.rankingLine1}</li>
+          <li className="upload-guide-text">{this.props.lang.guide.rankingLine2}</li>
+        </ul>
+      </div>
+    );
+  }
+
   renderRows() {
     if (this.state.ranking.length > 0) {
       return this.state.ranking.map((item, index) => {
@@ -58,6 +73,10 @@ class Ranking extends React.Component {
         );
       })
     }
+  }
+
+  renderSettingsLink() {
+    return <div className="btn" disabled={this.state.retrievingRanking}><Link to="/settings"> →{this.props.lang.label.settings}</Link></div>
   }
 
   usernameFormatter(username) {

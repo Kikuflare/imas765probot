@@ -12,7 +12,8 @@ class Settings extends React.Component {
       anonymous: null,
       alertVisible: false,
       requestFailed: null,
-      isSaving: false
+      isSaving: false,
+      retrievingSettings: false
     };
 
     this.defaultAlertState = {
@@ -26,14 +27,21 @@ class Settings extends React.Component {
       <div className="page-content">
         <div className="width-limiter">
           <h3 className="default-margin-right">{this.props.lang.label.settings}</h3>
-          {this.renderSpinner()}
-          <div className="default-margin-bottom">
-            {this.renderRankingCheckbox()}
-            {this.renderAnonymousCheckbox()}
-          </div>
           
-          {this.renderSaveButton()}
-          {this.renderAlert()}
+          {this.props.auth
+            ? this.state.retrievingSettings
+              ? this.renderSpinner()
+              : <div>
+              <div className="default-margin-bottom">
+                {this.renderRankingCheckbox()}
+                {this.renderAnonymousCheckbox()}
+              </div>
+              
+              {this.renderSaveButton()}
+              {this.renderAlert()}
+            </div>
+            : <a href="/api/login" className="btn btn-primary">{this.props.lang.label.loginWithTwitter}</a>
+          }
         </div>
       </div>
     );
@@ -48,7 +56,7 @@ class Settings extends React.Component {
               type="checkbox"
               checked={this.state.ranking}
               onChange={() => this.setState(Object.assign(this.defaultAlertState, {ranking: !this.state.ranking}))} />
-            <i className="form-icon"></i> {this.props.lang.label.ranking}
+            <i className="form-icon"></i> {this.props.lang.label.enableRanking}
           </label>
         </div>
       );
@@ -67,7 +75,7 @@ class Settings extends React.Component {
               type="checkbox"
               checked={this.state.anonymous}
               onChange={() => this.setState(Object.assign(this.defaultAlertState, {anonymous: !this.state.anonymous}))} />
-            <i className="form-icon"></i> {this.props.lang.label.anonymous}
+            <i className="form-icon"></i> {this.props.lang.label.anonymizeUsername}
           </label>
         </div>
       );
@@ -134,6 +142,7 @@ class Settings extends React.Component {
   }
 
   getSettings() {
+    this.setState({retrievingSettings: true})
     if (this.props.auth) {
       const config = {
         headers: {
@@ -142,7 +151,8 @@ class Settings extends React.Component {
       };
 
       return axios.get('/api/get-settings', config)
-        .then(response => this.setState(response.data));
+        .then(response => this.setState(Object.assign({retrievingSettings: false}, response.data)))
+        .catch(err => this.setState({retrievingSettings: false}));
     }
   }
 

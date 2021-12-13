@@ -14,9 +14,10 @@
     "video": "Video",
     "mobamas": "Deremas",
     "tachie": "tachie",
-	  "mirishita": "Million Theater",
+    "mirishita": "Million Theater",
     "birthday": "birthday",
-    "stse": "Starlit Season"
+    "stse": "Starlit Season",
+    "seasonal": "Seasonal"
   },
   "idol": {
     "azusa": "Azusa",
@@ -71,18 +72,22 @@
     "approved": "Approved",
     "rejected": "Rejected",
     "unprocessed": "Unprocessed",
+    "failed": "Failed",
     "showAll": "Show All",
+    "unprocessedOnly": "Unprocessed Only",
     "noResultsFound": "No results found.",
     "loginWithTwitter": "Login with Twitter",
     "logout": "Logout",
     "accessDenied": "Access Denied",
     "ranking": "Ranking",
     "anonymous": "Anonymous",
+    "enableRanking": "Enable ranking",
+    "anonymizeUsername": "Anonymize username",
     "rankingTitle": "Ranking",
     "approvedCount": "Approved Count",
     "rank": "Rank",
     "anonymousProducer": "AnonymousP",
-    "settings": "Settings",
+    "settings": "Account Settings",
     "saveButton": "Save"
   },
   "navigation": {
@@ -116,6 +121,8 @@
     "line5": "If possible, avoid including subtitles or dialogue boxes in the image.",
     "line6": "With the exception of the Futami twins, group pictures will not be accepted.",
     "line7": "Low quality images will be rejected (Example: face is obscured, bad screenshot angle)",
-    "line8": "Images from Stella Stage or Platinum Stars must be 1920x1080."
+    "line8": "Images from Stella Stage or Platinum Stars must be 1920x1080.",
+    "rankingLine1": "Ranking is only available for users using login with Twitter.",
+    "rankingLine2": "To enable ranking, please check Account Settings."
   }
 }

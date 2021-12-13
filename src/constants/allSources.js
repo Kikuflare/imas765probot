@@ -3,5 +3,6 @@ module.exports = [
   'million_live', 'mobamas', 'movie',
   'stst', 'plst', 'shinyfesta',
   'video', 'tachie', 'mirishita',
-  'birthday', 'stse', 'other'
+  'birthday', 'stse', 'other',
+  'seasonal'
 ]
