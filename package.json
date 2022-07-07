@@ -27,7 +27,7 @@
     "jwt-decode": "^3.1.2",
     "mime-types": "^2.1.31",
     "mkdirp": "^1.0.4",
-    "moment": "^2.29.1",
+    "moment": "^2.29.4",
     "passport": "^0.4.1",
     "passport-twitter": "^1.0.4",
     "pg": "^8.6.0",
