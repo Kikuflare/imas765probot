@@ -23,7 +23,7 @@
     "express": "^4.17.1",
     "express-session": "^1.17.2",
     "isomorphic-fetch": "^3.0.0",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "jwt-decode": "^3.1.2",
     "mime-types": "^2.1.31",
     "mkdirp": "^1.0.4",
